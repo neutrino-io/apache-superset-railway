@@ -3,38 +3,30 @@
 # Wait for the application to fully initialize
 sleep 5
 
-# Import ClickHouse modules and register dialects properly
+# Import ClickHouse Connect modules
 python3 -c "
 import sys
 print('Python path:', sys.path)
 try:
-    import clickhouse_driver
-    print('✓ ClickHouse driver imported successfully')
-    print('  Version:', clickhouse_driver.__version__)
+    import clickhouse_connect
+    print('✓ ClickHouse Connect imported successfully')
+    print('  Version:', clickhouse_connect.__version__)
+    print('  Features: High-performance HTTP driver with SQLAlchemy support')
 except ImportError as e:
-    print('✗ ClickHouse driver import failed:', e)
-
-try:
-    import clickhouse_sqlalchemy
-    print('✓ ClickHouse SQLAlchemy imported successfully')
-    print('  Version:', clickhouse_sqlalchemy.__version__)
-except ImportError as e:
-    print('✗ ClickHouse SQLAlchemy import failed:', e)
-
-try:
-    from sqlalchemy.dialects import registry
-    registry.register('clickhouse', 'clickhouse_driver.dbapi.extras.dialect', 'ClickHouseDialect')
-    registry.register('clickhouse+native', 'clickhouse_driver.dbapi.extras.dialect', 'ClickHouseDialect')
-    registry.register('clickhouse+http', 'clickhouse_driver.dbapi.extras.dialect', 'ClickHouseDialect')
-    print('✓ ClickHouse dialects registered successfully')
-except Exception as e:
-    print('✗ Dialect registration failed:', e)
+    print('✗ ClickHouse Connect import failed:', e)
 
 try:
     from sqlalchemy import create_engine
     print('✓ SQLAlchemy imported successfully')
 except ImportError as e:
     print('✗ SQLAlchemy import failed:', e)
+
+try:
+    # Test clickhouse-connect SQLAlchemy integration
+    from clickhouse_connect.driver import create_engine as ch_create_engine
+    print('✓ ClickHouse Connect SQLAlchemy integration available')
+except ImportError as e:
+    print('✗ ClickHouse Connect SQLAlchemy integration failed:', e)
 "
 
 # create Admin user, you can read these values from env or anywhere else possible

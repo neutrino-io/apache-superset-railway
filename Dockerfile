@@ -15,10 +15,9 @@ RUN apt-get update && apt-get install -y \
     && rm -rf /var/lib/apt/lists/*
 
 # Install Python dependencies in the correct order
-# First install clickhouse-driver and its dependencies
+# First install clickhouse-connect (modern high-performance driver)
 RUN pip install --no-cache-dir \
-    clickhouse-driver \
-    clickhouse-sqlalchemy
+    clickhouse-connect[sqlalchemy]
 
 # Install additional database drivers
 RUN pip install --no-cache-dir \
@@ -29,8 +28,7 @@ RUN pip install --no-cache-dir \
     mysqlclient
 
 # Create a custom requirements file for ClickHouse
-RUN echo "clickhouse-driver>=0.2.6" > /tmp/clickhouse_requirements.txt && \
-    echo "clickhouse-sqlalchemy>=0.2.0" >> /tmp/clickhouse_requirements.txt
+RUN echo "clickhouse-connect[sqlalchemy]>=0.6.0" > /tmp/clickhouse_requirements.txt
 
 # Install in Superset's Python environment as well
 RUN pip install --no-cache-dir -r /tmp/clickhouse_requirements.txt

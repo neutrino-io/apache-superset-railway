@@ -1,20 +1,15 @@
-# ClickHouse Driver Setup for Superset
+# ClickHouse Connect Driver Setup for Superset
 
-This repository has been configured to include the ClickHouse driver for Apache Superset.
+This repository has been configured to include the ClickHouse Connect driver for Apache Superset.
 
 ## Installation Details
 
-The ClickHouse driver has been added to the Dockerfile (`Dockerfile:23`):
+The ClickHouse Connect driver has been added to the Dockerfile (`Dockerfile:19-20`):
 
 ```dockerfile
-# Use clickhouse-driver instead of clickhouse-connect for better compatibility
-RUN pip install \
-    psycopg2-binary \
-    pymongo \
-    pymssql \
-    pyodbc \
-    mysqlclient \
-    clickhouse-driver
+# Install clickhouse-connect (modern high-performance driver)
+RUN pip install --no-cache-dir \
+    clickhouse-connect[sqlalchemy]
 ```
 
 ## ClickHouse Connection Configuration
@@ -25,12 +20,7 @@ RUN pip install \
 2. **Navigate to Superset UI** → Data → Databases
 3. **Add a new database** with the following connection string format:
 
-#### For ClickHouse Server (Native Protocol):
-```
-clickhouse+native://username:password@hostname:9000/database
-```
-
-#### For ClickHouse Server (HTTP Protocol):
+#### For ClickHouse Server (HTTP Protocol - Recommended for clickhouse-connect):
 ```
 clickhouse+http://username:password@hostname:8123/database
 ```
@@ -40,22 +30,26 @@ clickhouse+http://username:password@hostname:8123/database
 clickhouse+http://username:password@hostname:8443/database?secure=true
 ```
 
+#### For Railway ClickHouse:
+```
+clickhouse+http://username:password@hostname.railway.app:port/database
+```
+
 ### Connection String Parameters
 
-- **clickhouse+native** - Uses the native ClickHouse protocol (recommended)
-- **clickhouse+http** - Uses HTTP interface (alternative option)
+- **clickhouse+http** - Uses HTTP interface (recommended for clickhouse-connect)
 - **username** - ClickHouse username (often 'default')
 - **password** - ClickHouse password
 - **hostname** - ClickHouse server hostname or IP
-- **port** - ClickHouse port (9000 for native, 8123 for HTTP, 8443 for cloud)
+- **port** - ClickHouse HTTP port (8123 default, Railway uses custom ports)
 - **database** - Default database to connect to
 
 ### Example Connection Strings
 
-- **Local ClickHouse**: `clickhouse+native://default:@localhost:9000/default`
-- **Remote ClickHouse**: `clickhouse+native://admin:password123@clickhouse.example.com:9000/analytics`
+- **Local ClickHouse**: `clickhouse+http://default:@localhost:8123/default`
+- **Remote ClickHouse**: `clickhouse+http://admin:password123@clickhouse.example.com:8123/analytics`
 - **ClickHouse Cloud**: `clickhouse+http://default:cloud_password@your-instance.clickhouse.cloud:8443/default?secure=true`
-- **Railway ClickHouse**: `clickhouse+http://default:password@hostname.railway.app:443/default?secure=true`
+- **Railway ClickHouse**: `clickhouse+http://default:password@hostname.railway.app:23230/default`
 
 ## Verification
 
@@ -72,28 +66,27 @@ This script will test if the ClickHouse driver can be imported and instantiated 
 The Superset configuration has been updated in `config/superset_config.py` to include:
 
 ```python
-from sqlalchemy.dialects import registry
+import clickhouse_connect
 
-# Register ClickHouse dialect explicitly
-registry.register('clickhouse', 'clickhouse_driver.dbapi.extras.dialect', 'ClickHouseDialect')
-
-# Database engine configuration for ClickHouse
-SQLALCHEMY_EXAMPLES_URI = "clickhouse+native://default:@localhost:9000/default"
+# Database engine configuration for ClickHouse (HTTP interface)
+SQLALCHEMY_EXAMPLES_URI = "clickhouse+http://default:@localhost:8123/default"
 ```
 
-This explicitly registers the ClickHouse dialect and sets up the connection format for Superset to recognize.
+The `clickhouse-connect` package automatically registers its SQLAlchemy dialect and provides built-in integration with Superset.
 
 ## Features Supported
 
-The `clickhouse-driver` supports:
+The `clickhouse-connect` supports:
 
-- High-performance data transfer
-- Automatic type conversion
-- Connection pooling
-- SSL/TLS support for ClickHouse Cloud
-- NumPy and Pandas integration
-- SQLAlchemy integration for Superset
-- Better Python 3.8+ compatibility
+- **High-performance HTTP driver** with maximum compatibility
+- **Built-in SQLAlchemy support** for Superset integration
+- **Pandas DataFrames, NumPy Arrays, PyArrow Tables** integration
+- **Asyncio support** for async operations
+- **Lightweight SQLAlchemy Core** (select, joins, deletes)
+- **Connection pooling** and automatic type conversion
+- **SSL/TLS support** for ClickHouse Cloud
+- **Python 3.9+** support with modern features
+- **Better reliability** through HTTP interface
 
 ## Troubleshooting
 
