@@ -4,16 +4,17 @@ This repository has been configured to include the ClickHouse driver for Apache 
 
 ## Installation Details
 
-The ClickHouse driver has been added to the Dockerfile (`Dockerfile:22`):
+The ClickHouse driver has been added to the Dockerfile (`Dockerfile:23`):
 
 ```dockerfile
+# Use clickhouse-driver instead of clickhouse-connect for better compatibility
 RUN pip install \
     psycopg2-binary \
     pymongo \
     pymssql \
     pyodbc \
     mysqlclient \
-    clickhouse-connect
+    clickhouse-driver
 ```
 
 ## ClickHouse Connection Configuration
@@ -26,7 +27,7 @@ RUN pip install \
 
 #### For ClickHouse Server (Native Protocol):
 ```
-clickhouse+connect://username:password@hostname:9000/database
+clickhouse+native://username:password@hostname:9000/database
 ```
 
 #### For ClickHouse Server (HTTP Protocol):
@@ -36,12 +37,12 @@ clickhouse+http://username:password@hostname:8123/database
 
 #### For ClickHouse Cloud:
 ```
-clickhouse+connect://username:password@hostname:8443/database?secure=true
+clickhouse+http://username:password@hostname:8443/database?secure=true
 ```
 
 ### Connection String Parameters
 
-- **clickhouse+connect** - Uses the native ClickHouse protocol (recommended)
+- **clickhouse+native** - Uses the native ClickHouse protocol (recommended)
 - **clickhouse+http** - Uses HTTP interface (alternative option)
 - **username** - ClickHouse username (often 'default')
 - **password** - ClickHouse password
@@ -51,9 +52,10 @@ clickhouse+connect://username:password@hostname:8443/database?secure=true
 
 ### Example Connection Strings
 
-- **Local ClickHouse**: `clickhouse+connect://default:@localhost:9000/default`
-- **Remote ClickHouse**: `clickhouse+connect://admin:password123@clickhouse.example.com:9000/analytics`
-- **ClickHouse Cloud**: `clickhouse+connect://default:cloud_password@your-instance.clickhouse.cloud:8443/default?secure=true`
+- **Local ClickHouse**: `clickhouse+native://default:@localhost:9000/default`
+- **Remote ClickHouse**: `clickhouse+native://admin:password123@clickhouse.example.com:9000/analytics`
+- **ClickHouse Cloud**: `clickhouse+http://default:cloud_password@your-instance.clickhouse.cloud:8443/default?secure=true`
+- **Railway ClickHouse**: `clickhouse+http://default:password@hostname.railway.app:443/default?secure=true`
 
 ## Verification
 
@@ -70,15 +72,20 @@ This script will test if the ClickHouse driver can be imported and instantiated 
 The Superset configuration has been updated in `config/superset_config.py` to include:
 
 ```python
+from sqlalchemy.dialects import registry
+
+# Register ClickHouse dialect explicitly
+registry.register('clickhouse', 'clickhouse_driver.dbapi.extras.dialect', 'ClickHouseDialect')
+
 # Database engine configuration for ClickHouse
-SQLALCHEMY_EXAMPLES_URI = "clickhouse+connect://default:@localhost:9000/default"
+SQLALCHEMY_EXAMPLES_URI = "clickhouse+native://default:@localhost:9000/default"
 ```
 
-This sets up the ClickHouse connection dialect for Superset to recognize.
+This explicitly registers the ClickHouse dialect and sets up the connection format for Superset to recognize.
 
 ## Features Supported
 
-The `clickhouse-connect` driver supports:
+The `clickhouse-driver` supports:
 
 - High-performance data transfer
 - Automatic type conversion
@@ -86,6 +93,7 @@ The `clickhouse-connect` driver supports:
 - SSL/TLS support for ClickHouse Cloud
 - NumPy and Pandas integration
 - SQLAlchemy integration for Superset
+- Better Python 3.8+ compatibility
 
 ## Troubleshooting
 

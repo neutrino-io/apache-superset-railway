@@ -13,13 +13,14 @@ RUN apt-get update && apt-get install -y \
     && apt-get clean \
     && rm -rf /var/lib/apt/lists/*
 
+# Use clickhouse-driver instead of clickhouse-connect for better compatibility
 RUN pip install \
     psycopg2-binary \
     pymongo \
     pymssql \
     pyodbc \
     mysqlclient \
-    clickhouse-connect
+    clickhouse-driver
 
 ENV ADMIN_USERNAME $ADMIN_USERNAME
 ENV ADMIN_EMAIL $ADMIN_EMAIL

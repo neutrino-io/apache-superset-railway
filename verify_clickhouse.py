@@ -6,21 +6,22 @@ Verification script to test ClickHouse driver installation
 import sys
 
 def test_clickhouse_driver():
-    """Test if clickhouse-connect can be imported"""
+    """Test if clickhouse-driver can be imported"""
     try:
-        import clickhouse_connect
-        print("✅ ClickHouse driver (clickhouse-connect) installed successfully!")
+        import clickhouse_driver
+        print("✅ ClickHouse driver (clickhouse-driver) installed successfully!")
 
         # Print version information
         try:
-            version = clickhouse_connect.__version__
+            version = clickhouse_driver.__version__
             print(f"   Version: {version}")
         except AttributeError:
             print("   Version: Unknown")
 
         # Test basic client creation (no actual connection)
         try:
-            client = clickhouse_connect.get_client(host='localhost', port=8123)
+            from clickhouse_driver import Client
+            client = Client(host='localhost', port=9000)
             print("✅ ClickHouse client can be instantiated")
             return True
         except Exception as e:
