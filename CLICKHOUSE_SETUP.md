@@ -1,15 +1,19 @@
-# ClickHouse Connect Driver Setup for Superset
+# ClickHouse Dual Driver Setup for Superset
 
-This repository has been configured to include the ClickHouse Connect driver for Apache Superset.
+This repository has been configured to include both ClickHouse drivers for maximum compatibility:
+
+- **clickhouse-connect**: Modern high-performance HTTP driver
+- **clickhouse-driver**: Native protocol driver for Railway compatibility
 
 ## Installation Details
 
-The ClickHouse Connect driver has been added to the Dockerfile (`Dockerfile:19-20`):
+Both ClickHouse drivers have been added to the Dockerfile (`Dockerfile:18-21`):
 
 ```dockerfile
-# Install clickhouse-connect (modern high-performance driver)
+# Install both clickhouse-connect (HTTP) and clickhouse-driver (native) for compatibility
 RUN pip install --no-cache-dir \
-    clickhouse-connect[sqlalchemy]
+    clickhouse-connect[sqlalchemy] \
+    clickhouse-driver
 ```
 
 ## ClickHouse Connection Configuration
@@ -20,9 +24,14 @@ RUN pip install --no-cache-dir \
 2. **Navigate to Superset UI** → Data → Databases
 3. **Add a new database** with the following connection string format:
 
-#### For ClickHouse Server (HTTP Protocol - Recommended for clickhouse-connect):
+#### For ClickHouse Server (HTTP Protocol):
 ```
 clickhouse+http://username:password@hostname:8123/database
+```
+
+#### For ClickHouse Server (Native Protocol):
+```
+clickhouse+native://username:password@hostname:9000/database
 ```
 
 #### For ClickHouse Cloud:
@@ -30,26 +39,27 @@ clickhouse+http://username:password@hostname:8123/database
 clickhouse+http://username:password@hostname:8443/database?secure=true
 ```
 
-#### For Railway ClickHouse:
+#### For Railway ClickHouse (Native Protocol - REQUIRED):
 ```
-clickhouse+http://username:password@hostname.railway.app:port/database
+clickhouse+native://username:password@hostname.railway.app:23230/database
 ```
 
 ### Connection String Parameters
 
-- **clickhouse+http** - Uses HTTP interface (recommended for clickhouse-connect)
+- **clickhouse+http** - Uses HTTP interface (for standard ClickHouse)
+- **clickhouse+native** - Uses native TCP protocol (required for Railway)
 - **username** - ClickHouse username (often 'default')
 - **password** - ClickHouse password
 - **hostname** - ClickHouse server hostname or IP
-- **port** - ClickHouse HTTP port (8123 default, Railway uses custom ports)
+- **port** - ClickHouse port (8123 for HTTP, 9000 for native, Railway uses 23230)
 - **database** - Default database to connect to
 
 ### Example Connection Strings
 
-- **Local ClickHouse**: `clickhouse+http://default:@localhost:8123/default`
-- **Remote ClickHouse**: `clickhouse+http://admin:password123@clickhouse.example.com:8123/analytics`
+- **Local ClickHouse**: `clickhouse+native://default:@localhost:9000/default`
+- **Remote ClickHouse**: `clickhouse+native://admin:password123@clickhouse.example.com:9000/analytics`
 - **ClickHouse Cloud**: `clickhouse+http://default:cloud_password@your-instance.clickhouse.cloud:8443/default?secure=true`
-- **Railway ClickHouse**: `clickhouse+http://default:password@hostname.railway.app:23230/default`
+- **Railway ClickHouse**: `clickhouse+native://default:$$74qimqfukgop1ega34t2znnswagku88v@nozomi.proxy.rlwy.net:23230/default`
 
 ## Verification
 
