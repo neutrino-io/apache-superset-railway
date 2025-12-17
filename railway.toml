@@ -39,8 +39,8 @@ SUPERSET_SECRET_KEY = "REDACTED_SUPERSET_SECRET_KEY"
 # This is the Superset metadata database (stores charts, dashboards, users, etc.)
 SQLALCHEMY_DATABASE_URI = "postgresql://postgres:REDACTED_DB_PASSWORD@db-host:5432/superset"
 
-# Python Configuration
-PYTHONPATH = "/app:/usr/local/lib/python3.11/site-packages"
+# Python Configuration - Using generic python3 path for version independence
+PYTHONPATH = "/app:/usr/local/lib/python3/site-packages:/usr/lib/python3/site-packages"
 SUPERSET_CONFIG_PATH = "/app/superset_config.py"
 
 # Superset Data Directories

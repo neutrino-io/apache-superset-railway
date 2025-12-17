@@ -2,19 +2,41 @@ import os
 import sys
 from sqlalchemy.dialects import registry
 
-# Add system Python site-packages to path for ClickHouse modules
-sys.path.insert(0, '/usr/local/lib/python3.10/site-packages')
+# Dynamically detect Python version and add to path
+# This ensures compatibility with different Superset base image versions
+python_version = f"{sys.version_info.major}.{sys.version_info.minor}"
+python_paths = [
+    f'/usr/local/lib/python{python_version}/site-packages',
+    f'/usr/lib/python{python_version}/site-packages',
+    '/usr/local/lib/python3/site-packages',
+    '/usr/lib/python3/site-packages',
+]
+
+# Add Python site-packages to path for all database drivers
+for path in python_paths:
+    if path not in sys.path and os.path.exists(path):
+        sys.path.insert(0, path)
+
+print(f"Python version: {python_version}")
+print(f"Python path: {sys.path[:5]}")  # Print first 5 paths
+
+# Verify critical database drivers are available
+try:
+    import psycopg2
+    print(f"✓ PostgreSQL driver (psycopg2): {psycopg2.__version__}")
+except ImportError as e:
+    print(f"✗ PostgreSQL driver (psycopg2) not available: {e}")
 
 # Add ClickHouse modules to Python path
 try:
     import clickhouse_connect
-    print(f"ClickHouse Connect version: {clickhouse_connect.__version__}")
+    print(f"✓ ClickHouse Connect version: {clickhouse_connect.__version__}")
 except ImportError as e:
     print(f"Warning: ClickHouse Connect not available: {e}")
 
 try:
     import clickhouse_driver
-    print(f"ClickHouse Driver version: {clickhouse_driver.__version__}")
+    print(f"✓ ClickHouse Driver version: {clickhouse_driver.__version__}")
 except ImportError as e:
     print(f"Warning: ClickHouse Driver not available: {e}")
 
@@ -144,6 +166,7 @@ CACHE_CONFIG = {
 print("=" * 70)
 print("Superset Configuration Summary")
 print("=" * 70)
+print(f"Python Version: {python_version}")
 print(f"Metadata Database: {SQLALCHEMY_DATABASE_URI.split('@')[0] if '@' in SQLALCHEMY_DATABASE_URI else 'SQLite'}")
 print(f"Data Directory: {DATA_DIR}")
 print(f"Upload Directory: {UPLOAD_FOLDER}")
