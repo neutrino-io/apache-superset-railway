@@ -117,6 +117,8 @@ echo "  - Data Directory: /app/superset_home"
 echo "======================================================================"
 echo "Starting Superset web server..."
 echo "======================================================================"
+echo "FLASK_APP is set to: $FLASK_APP"
+echo "======================================================================"
 
 # Start the server
-/bin/sh -c /usr/bin/run-server.sh
+exec /usr/bin/run-server.sh
