@@ -42,6 +42,12 @@ RUN /usr/local/bin/pip install --no-cache-dir \
     --target=/app/.venv/lib/python3.10/site-packages \
     pillow
 
+# Install ECharts visualization plugin
+# This enables echarts_* chart types (bar, line, area, scatter, etc.)
+RUN /usr/local/bin/pip install --no-cache-dir \
+    --target=/app/.venv/lib/python3.10/site-packages \
+    apache-superset[echarts]
+
 # Verify psycopg2 installation
 RUN python3 -c "import psycopg2; print(f'✓ psycopg2 version: {psycopg2.__version__}')"
 
