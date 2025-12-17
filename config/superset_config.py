@@ -139,7 +139,6 @@ else:
 
 # Rate limiting configuration
 RATELIMIT_ENABLED = True
-RATELIMIT_APPLICATION = "superset"
 
 # ============================================================================
 # Cache Configuration
