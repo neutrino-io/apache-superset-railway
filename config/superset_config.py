@@ -119,9 +119,7 @@ SQLALCHEMY_ENGINE_OPTIONS = {
 DATA_DIR = '/app/superset_home/data'
 UPLOAD_FOLDER = '/app/superset_home/uploads'
 
-# Ensure directories exist
-os.makedirs(DATA_DIR, exist_ok=True)
-os.makedirs(UPLOAD_FOLDER, exist_ok=True)
+# Note: Directories are created by init script to avoid permission issues with volume mounting
 
 # ============================================================================
 # Rate Limiting Configuration (Flask-Limiter)

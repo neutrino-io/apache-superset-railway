@@ -5,6 +5,13 @@ echo "======================================================================"
 echo "Superset Initialization Starting"
 echo "======================================================================"
 
+# Create data directories if they don't exist (needed for volume mounting)
+echo "Ensuring data directories exist..."
+mkdir -p /app/superset_home/data
+mkdir -p /app/superset_home/uploads
+mkdir -p /app/superset_home/logs
+echo "✓ Data directories ready"
+
 # Wait for the application to fully initialize
 echo "Waiting for application initialization..."
 sleep 5
