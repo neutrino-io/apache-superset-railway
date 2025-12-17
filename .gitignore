@@ -50,6 +50,7 @@ logs/
 tmp/
 temp/
 *.tmp
+.playwright-mcp
 
 # Database dumps
 *.sql
