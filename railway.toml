@@ -18,12 +18,23 @@ restartPolicyMaxRetries = 3
 mountPath = "/app/superset_home"
 name = "superset-data"
 
+# ============================================================================
+# SECURITY WARNING: DO NOT COMMIT REAL CREDENTIALS TO THIS FILE
+# ============================================================================
+# All sensitive values should be set via Railway's environment variables UI
+# or Railway CLI, NOT in this file.
+#
+# This file should only contain placeholder values as examples.
+# Real credentials will be injected by Railway at runtime.
+# ============================================================================
+
 # Environment Variables Configuration
 [deploy.env]
 # Superset Admin Configuration
+# SET THESE IN RAILWAY DASHBOARD - DO NOT COMMIT REAL VALUES
 ADMIN_EMAIL = "admin@example.com"
-ADMIN_PASSWORD = "REDACTED_PASSWORD"
-ADMIN_USERNAME = "REDACTED_USERNAME"
+ADMIN_PASSWORD = "CHANGE_ME_IN_RAILWAY"
+ADMIN_USERNAME = "admin"
 
 # Application Configuration
 PORT = "8088"
@@ -31,13 +42,16 @@ FLASK_APP = "superset.app:create_app()"
 SUPERSET_ENV = "production"
 
 # Security Keys
-# NOTE: Railway will escape the $ in the password automatically
-SECRET_KEY = "REDACTED_SECRET_KEY"
-SUPERSET_SECRET_KEY = "REDACTED_SUPERSET_SECRET_KEY"
+# GENERATE NEW KEYS: python3 -c "import secrets; print(secrets.token_urlsafe(32))"
+# SET IN RAILWAY DASHBOARD - DO NOT COMMIT REAL VALUES
+SECRET_KEY = "CHANGE_ME_GENERATE_NEW_KEY"
+SUPERSET_SECRET_KEY = "CHANGE_ME_GENERATE_NEW_KEY"
 
 # PostgreSQL Database Configuration
 # This is the Superset metadata database (stores charts, dashboards, users, etc.)
-SQLALCHEMY_DATABASE_URI = "postgresql://postgres:REDACTED_DB_PASSWORD@db-host:5432/superset"
+# SET IN RAILWAY DASHBOARD - DO NOT COMMIT REAL VALUES
+# Format: postgresql://user:password@host:port/database
+SQLALCHEMY_DATABASE_URI = "postgresql://user:password@host:port/database"
 
 # Python Configuration - Using generic python3 path for version independence
 PYTHONPATH = "/app:/usr/local/lib/python3/site-packages:/usr/lib/python3/site-packages"
@@ -75,4 +89,16 @@ CLICKHOUSE_NATIVE_PORT = "9000"
 # 1. Create new Redis service in Railway
 # 2. Copy the connection URL from Railway's Redis service
 # 3. Set REDIS_URL environment variable in this service
+# ============================================================================
+
+# ============================================================================
+# IMPORTANT: Setting Environment Variables in Railway
+# ============================================================================
+# 1. Go to Railway Dashboard: https://railway.app
+# 2. Select your Superset service
+# 3. Go to "Variables" tab
+# 4. Add/Update each environment variable individually
+# 5. Railway will automatically redeploy with new values
+#
+# Never commit real credentials to git - always use Railway's variable management
 # ============================================================================
