@@ -42,12 +42,6 @@ RUN /usr/local/bin/pip install --no-cache-dir \
     --target=/app/.venv/lib/python3.10/site-packages \
     pillow
 
-# Install ECharts visualization plugin
-# This enables echarts_* chart types (bar, line, area, treemap, heatmap, gauge, funnel, radar)
-RUN /usr/local/bin/pip install --no-cache-dir \
-    --target=/app/.venv/lib/python3.10/site-packages \
-    apache-superset[echarts]
-
 # Verify psycopg2 installation
 RUN python3 -c "import psycopg2; print(f'✓ psycopg2 version: {psycopg2.__version__}')"
 
@@ -67,11 +61,11 @@ ENV ADMIN_EMAIL=$ADMIN_EMAIL
 ENV ADMIN_PASSWORD=$ADMIN_PASSWORD
 
 # Copy configuration files
-COPY /scripts/superset_init.sh ./superset_init.sh
+COPY scripts/superset_init.sh ./superset_init.sh
 RUN chmod +x ./superset_init.sh
 
-COPY /config/superset_config.py /app/
-COPY /scripts/clickhouse_railway_engine.py /app/
+COPY config/superset_config.py /app/
+COPY scripts/clickhouse_railway_engine.py /app/
 
 # Configure Superset paths and application
 ENV SUPERSET_CONFIG_PATH=/app/superset_config.py
@@ -88,16 +82,15 @@ RUN PYTHON_VERSION=$(python3 -c "import sys; print(f'{sys.version_info.major}.{s
 # Set PYTHONPATH environment variable for runtime
 ENV PYTHONPATH=/app:/usr/local/lib/python3/site-packages:/usr/lib/python3/site-packages
 
-# Verify all database drivers and plugins are installed before switching user
-RUN echo "====== Verifying Database Drivers & Plugins ======" && \
+# Verify all database drivers are installed before switching user
+RUN echo "====== Verifying Database Drivers ======" && \
     python3 -c "import psycopg2; print(f'✓ psycopg2: {psycopg2.__version__}')" && \
     python3 -c "import pymongo; print(f'✓ pymongo: {pymongo.__version__}')" && \
-    python3 -c "import clickhouse_connect; print(f'✓ clickhouse-connect: {clickhouse_connect.__version__}')" && \
+    python3 -c "import clickhouse_connect; print('✓ clickhouse-connect: imported successfully')" && \
     python3 -c "import clickhouse_driver; print(f'✓ clickhouse-driver: {clickhouse_driver.__version__}')" && \
     python3 -c "from PIL import Image; import PIL; print(f'✓ Pillow: {PIL.__version__}')" && \
-    python3 -c "import superset; print(f'✓ Superset: {superset.__version__}')" && \
-    echo "✓ ECharts plugin installed (apache-superset[echarts])" && \
-    echo "====== All drivers and plugins verified successfully ======"
+    python3 -c "import superset; print('✓ Superset: imported successfully')" && \
+    echo "====== All drivers verified successfully ======"
 
 # Note: Staying as root to allow init script to create volume directories
 # Init script will switch to superset user after directory setup
