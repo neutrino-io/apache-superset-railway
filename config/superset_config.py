@@ -137,8 +137,8 @@ else:
     RATELIMIT_STORAGE_URI = "memory://"
     print("⚠ Rate limiting using in-memory storage (set REDIS_URL for production)")
 
-# Rate limiting configuration
-RATELIMIT_ENABLED = True
+# Rate limiting configuration (disabled for Railway deployment)
+RATELIMIT_ENABLED = False
 
 # ============================================================================
 # Cache Configuration
