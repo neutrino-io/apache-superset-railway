@@ -27,7 +27,7 @@ ADMIN_USERNAME = "REDACTED_USERNAME"
 
 # Application Configuration
 PORT = "8088"
-FLASK_APP = "superset"
+FLASK_APP = "superset.app:create_app()"
 SUPERSET_ENV = "production"
 
 # Security Keys
