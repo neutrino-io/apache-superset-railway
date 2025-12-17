@@ -62,11 +62,8 @@ ENV SUPERSET_HOME=/app/superset_home
 # Set Python path to ensure ClickHouse modules are available
 ENV PYTHONPATH=/app:/usr/local/lib/python3.11/site-packages:$PYTHONPATH
 
-# Volume mount point for persistent data
-# This will be mounted by Railway configuration
-VOLUME ["/app/superset_home"]
-
 # Switch to superset user for security
+# Note: Volume mounting is configured in railway.toml
 USER superset
 
 # Expose port (Railway will map this automatically)
