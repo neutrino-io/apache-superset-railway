@@ -19,15 +19,17 @@ RUN PYTHON_VERSION=$(python3 -c "import sys; print(f'{sys.version_info.major}.{s
     echo "Detected Python version: $PYTHON_VERSION" && \
     echo "export PYTHON_VERSION=$PYTHON_VERSION" >> /etc/environment
 
-# Install Python dependencies in the correct order
+# Install Python dependencies to the virtual environment
+# The Superset base image uses a venv at /app/.venv/lib/python3.10/site-packages
 # Install both clickhouse-connect (HTTP) and clickhouse-driver (native) for compatibility
-RUN pip install --no-cache-dir \
+RUN /usr/local/bin/pip install --no-cache-dir \
+    --target=/app/.venv/lib/python3.10/site-packages \
     clickhouse-connect[sqlalchemy] \
     clickhouse-driver
 
-# Install additional database drivers
-# Using --upgrade --force-reinstall to ensure psycopg2-binary is properly installed
-RUN pip install --no-cache-dir --upgrade --force-reinstall \
+# Install additional database drivers to the venv
+RUN /usr/local/bin/pip install --no-cache-dir \
+    --target=/app/.venv/lib/python3.10/site-packages \
     psycopg2-binary \
     pymongo \
     pymssql \
@@ -35,15 +37,7 @@ RUN pip install --no-cache-dir --upgrade --force-reinstall \
     mysqlclient
 
 # Verify psycopg2 installation
-RUN python3 -c "import psycopg2; print(f'✓ psycopg2 version: {psycopg2.__version__}')" || \
-    (echo "ERROR: psycopg2 not installed correctly" && exit 1)
-
-# Create a custom requirements file for ClickHouse
-RUN echo "clickhouse-connect[sqlalchemy]>=0.6.0" > /tmp/clickhouse_requirements.txt && \
-    echo "clickhouse-driver>=0.2.6" >> /tmp/clickhouse_requirements.txt
-
-# Install in Superset's Python environment as well
-RUN pip install --no-cache-dir -r /tmp/clickhouse_requirements.txt
+RUN python3 -c "import psycopg2; print(f'✓ psycopg2 version: {psycopg2.__version__}')"
 
 # Create persistent data directories
 # These will be mounted as volumes in Railway
