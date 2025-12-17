@@ -36,6 +36,24 @@ try:
 except Exception as e:
     print(f"Warning: Failed to register ClickHouse Connect dialect: {e}")
 
+# ============================================================================
+# PostgreSQL Configuration - Superset Metadata Database
+# ============================================================================
+# Configure PostgreSQL as the metadata database (replaces default SQLite)
+# This is where Superset stores its internal metadata, user info, charts, dashboards, etc.
+SQLALCHEMY_DATABASE_URI = os.environ.get(
+    'SQLALCHEMY_DATABASE_URI',
+    'sqlite:////app/superset_home/superset.db'  # Fallback to SQLite if env var not set
+)
+
+# Use SUPERSET_SECRET_KEY as primary, fall back to SECRET_KEY
+SECRET_KEY = os.environ.get("SUPERSET_SECRET_KEY") or os.environ.get("SECRET_KEY")
+
+# Additional Superset security configuration
+if not SECRET_KEY:
+    print("WARNING: No SECRET_KEY or SUPERSET_SECRET_KEY set. Using insecure default.")
+    SECRET_KEY = "CHANGE_ME_TO_A_RANDOM_SECRET_KEY"
+
 FEATURE_FLAGS = {
     "ENABLE_TEMPLATE_PROCESSING": True,
 }
@@ -43,6 +61,9 @@ FEATURE_FLAGS = {
 PREVENT_UNSAFE_DB_CONNECTIONS = False
 ENABLE_PROXY_FIX = True
 
+# ============================================================================
+# ClickHouse Configuration
+# ============================================================================
 # Database engine configuration for ClickHouse
 # Use native protocol for Railway compatibility
 SQLALCHEMY_EXAMPLES_URI = "clickhouse+native://default:@localhost:9000/default"
@@ -51,6 +72,9 @@ SQLALCHEMY_EXAMPLES_URI = "clickhouse+native://default:@localhost:9000/default"
 CLICKHOUSE_HTTP_PORT = 8123
 CLICKHOUSE_NATIVE_PORT = 9000
 
+# ============================================================================
+# SQLAlchemy Engine Configuration
+# ============================================================================
 # Enable detailed logging for database connections
 SQLALCHEMY_ENGINE_OPTIONS = {
     'pool_pre_ping': True,
@@ -58,8 +82,20 @@ SQLALCHEMY_ENGINE_OPTIONS = {
     'echo': False,
 }
 
-SECRET_KEY = os.environ.get("SECRET_KEY")
+# ============================================================================
+# Data Persistence Configuration
+# ============================================================================
+# Configure data directories for volume mounting
+DATA_DIR = '/app/superset_home/data'
+UPLOAD_FOLDER = '/app/superset_home/uploads'
 
+# Ensure directories exist
+os.makedirs(DATA_DIR, exist_ok=True)
+os.makedirs(UPLOAD_FOLDER, exist_ok=True)
+
+# ============================================================================
+# Helper Functions
+# ============================================================================
 # Custom database engine validation
 def validate_clickhouse_connection(uri):
     """Validate ClickHouse connection string format"""
@@ -90,3 +126,26 @@ def get_railway_clickhouse_uri():
 
 # Export the Railway URI for easy access
 RAILWAY_CLICKHOUSE_URI = get_railway_clickhouse_uri()
+
+# ============================================================================
+# Production Configuration
+# ============================================================================
+# Additional production settings
+SUPERSET_WEBSERVER_TIMEOUT = 300
+ROW_LIMIT = 50000
+
+# Cache configuration (optional, can be enhanced with Redis)
+CACHE_CONFIG = {
+    'CACHE_TYPE': 'SimpleCache',
+    'CACHE_DEFAULT_TIMEOUT': 300
+}
+
+# Print configuration summary
+print("=" * 70)
+print("Superset Configuration Summary")
+print("=" * 70)
+print(f"Metadata Database: {SQLALCHEMY_DATABASE_URI.split('@')[0] if '@' in SQLALCHEMY_DATABASE_URI else 'SQLite'}")
+print(f"Data Directory: {DATA_DIR}")
+print(f"Upload Directory: {UPLOAD_FOLDER}")
+print(f"ClickHouse Support: Enabled (Native Protocol)")
+print("=" * 70)

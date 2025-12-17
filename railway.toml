@@ -1,0 +1,52 @@
+# Railway Configuration for Apache Superset
+# This file configures the deployment, environment variables, and persistent storage
+
+[build]
+builder = "DOCKERFILE"
+dockerfilePath = "Dockerfile"
+
+[deploy]
+startCommand = "./superset_init.sh"
+healthcheckPath = "/health"
+healthcheckTimeout = 300
+restartPolicyType = "ON_FAILURE"
+restartPolicyMaxRetries = 3
+
+# Volume Configuration for Persistent Storage
+# This ensures Superset data persists across deployments
+[[deploy.volumes]]
+mountPath = "/app/superset_home"
+name = "superset-data"
+
+# Environment Variables Configuration
+[deploy.env]
+# Superset Admin Configuration
+ADMIN_EMAIL = "admin@example.com"
+ADMIN_PASSWORD = "REDACTED_PASSWORD"
+ADMIN_USERNAME = "REDACTED_USERNAME"
+
+# Application Configuration
+PORT = "8088"
+FLASK_APP = "superset"
+SUPERSET_ENV = "production"
+
+# Security Keys
+# NOTE: Railway will escape the $ in the password automatically
+SECRET_KEY = "REDACTED_SECRET_KEY"
+SUPERSET_SECRET_KEY = "REDACTED_SUPERSET_SECRET_KEY"
+
+# PostgreSQL Database Configuration
+# This is the Superset metadata database (stores charts, dashboards, users, etc.)
+SQLALCHEMY_DATABASE_URI = "postgresql://postgres:REDACTED_DB_PASSWORD@db-host:5432/superset"
+
+# Python Configuration
+PYTHONPATH = "/app:/usr/local/lib/python3.11/site-packages"
+SUPERSET_CONFIG_PATH = "/app/superset_config.py"
+
+# Superset Data Directories
+DATA_DIR = "/app/superset_home/data"
+UPLOAD_FOLDER = "/app/superset_home/uploads"
+
+# ClickHouse Configuration (for data source connections)
+CLICKHOUSE_HTTP_PORT = "8123"
+CLICKHOUSE_NATIVE_PORT = "9000"

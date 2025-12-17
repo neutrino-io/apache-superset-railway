@@ -35,21 +35,41 @@ RUN echo "clickhouse-connect[sqlalchemy]>=0.6.0" > /tmp/clickhouse_requirements.
 # Install in Superset's Python environment as well
 RUN pip install --no-cache-dir -r /tmp/clickhouse_requirements.txt
 
-ENV ADMIN_USERNAME $ADMIN_USERNAME
-ENV ADMIN_EMAIL $ADMIN_EMAIL
-ENV ADMIN_PASSWORD $ADMIN_PASSWORD
+# Create persistent data directories
+# These will be mounted as volumes in Railway
+RUN mkdir -p /app/superset_home/data && \
+    mkdir -p /app/superset_home/uploads && \
+    mkdir -p /app/superset_home/logs && \
+    chown -R superset:superset /app/superset_home
 
+# Environment variables
+ENV ADMIN_USERNAME=$ADMIN_USERNAME
+ENV ADMIN_EMAIL=$ADMIN_EMAIL
+ENV ADMIN_PASSWORD=$ADMIN_PASSWORD
+
+# Copy configuration files
 COPY /config/superset_init.sh ./superset_init.sh
 RUN chmod +x ./superset_init.sh
 
 COPY /config/superset_config.py /app/
 COPY clickhouse_railway_engine.py /app/
-ENV SUPERSET_CONFIG_PATH /app/superset_config.py
-ENV SECRET_KEY $SECRET_KEY
+
+# Configure Superset paths
+ENV SUPERSET_CONFIG_PATH=/app/superset_config.py
+ENV SECRET_KEY=$SECRET_KEY
+ENV SUPERSET_HOME=/app/superset_home
 
 # Set Python path to ensure ClickHouse modules are available
-ENV PYTHONPATH /app:/usr/local/lib/python3.11/site-packages:$PYTHONPATH
+ENV PYTHONPATH=/app:/usr/local/lib/python3.11/site-packages:$PYTHONPATH
 
+# Volume mount point for persistent data
+# This will be mounted by Railway configuration
+VOLUME ["/app/superset_home"]
+
+# Switch to superset user for security
 USER superset
 
-ENTRYPOINT [ "./superset_init.sh" ]
+# Expose port (Railway will map this automatically)
+EXPOSE 8088
+
+ENTRYPOINT ["./superset_init.sh"]
