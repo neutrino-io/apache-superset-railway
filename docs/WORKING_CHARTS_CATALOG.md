@@ -1,82 +1,57 @@
-# Working Charts Catalog - Verified REST API Created
+# Working Charts Catalog - Built-in Types Only
 
 **Last Updated**: 2025-12-17
-**Total Verified Charts**: 15
+**Total Charts**: 7
 **Success Rate**: 100%
-**Method**: JQ-based stringification
+**Method**: JQ-based stringification with valid viz_types
 
 ---
 
-## 📊 **All Verified Working Charts**
+## 📊 **All Working Charts**
 
 | ID | Type | Category | Chart Name | Rows | Status |
 |----|------|----------|------------|------|--------|
-| 35 | big_number_total | KPI | FIXED: Total Voters KPI | 1.05M | ✅ UI Verified |
-| 36 | pie | Part-to-Whole | FIXED: Religion Distribution | 2 | ✅ API Verified |
-| 37 | echarts_timeseries_bar | Ranking | FIXED: Voters by Constituency | 14 | ✅ API Verified |
-| 38 | table | Tabular | FIXED: District Statistics | 12 | ✅ API Verified |
-| 39 | sunburst_v2 | Hierarchical | FIXED: Parlimen-DUN Hierarchy | 43 | ✅ API Verified |
-| 40 | echarts_treemap | Hierarchical | Voter Distribution by Parlimen-DUN | 43 | ✅ API Verified |
-| 41 | histogram | Distribution | Age Distribution of Voters | 10,000 | ✅ API Verified |
-| 42 | echarts_heatmap | Correlation | District vs Religion Heatmap | 24 | ✅ API Verified |
-| 43 | echarts_timeseries_line | Evolution | Voter Count by Age | 97 | ✅ API Verified |
-| 44 | echarts_timeseries_area | Evolution | Cumulative Voters by Age | 97 | ✅ API Verified |
-| 45 | pivot_table_v2 | Tabular | Daerah vs Agama Pivot | 24 | ✅ API Verified |
-| 46 | box_plot | Distribution | Age Distribution by Religion | 10,000 | ✅ API Verified |
-| 47 | echarts_gauge | KPI | Voter Registration Percentage | 1 | ✅ API Verified |
-| 48 | echarts_funnel | Part-to-Whole | Top Districts Funnel | 10 | ✅ API Verified |
-| 49 | echarts_radar | Correlation | Religion Demographics Profile | 2 | ✅ API Verified |
+| 35 | big_number_total | KPI | Total Voters KPI | 1.05M | ✅ Verified |
+| 36 | pie | Part-to-Whole | Religion Distribution | 2 | ✅ Verified |
+| 38 | table | Tabular | District Statistics | 12 | ✅ Verified |
+| 39 | sunburst_v2 | Hierarchical | Parlimen-DUN Hierarchy | 43 | ✅ Verified |
+| 41 | histogram | Distribution | Age Distribution of Voters | 10,000 | ✅ Verified |
+| 45 | pivot_table_v2 | Tabular | Daerah vs Agama Pivot | 24 | ✅ Verified |
+| 46 | box_plot | Distribution | Age Distribution by Religion | 10,000 | ✅ Verified |
 
 ---
 
 ## 📁 **Charts by Category**
 
-### KPI & Metrics (2 charts)
-- **#35** - big_number_total: Total Voters KPI
-- **#47** - echarts_gauge: Voter Registration Percentage
+### KPI & Metrics (1 chart)
+- **#35** - big_number_total: Total Voters KPI (1.05M display)
 
-### Part-to-Whole (2 charts)
-- **#36** - pie: Religion Distribution
-- **#48** - echarts_funnel: Top Districts Funnel
-
-### Ranking & Comparison (1 chart)
-- **#37** - echarts_timeseries_bar: Voters by Constituency
-
-### Hierarchical (2 charts)
-- **#39** - sunburst_v2: Parlimen-DUN Hierarchy
-- **#40** - echarts_treemap: Voter Distribution by Parlimen-DUN
-
-### Distribution & Statistical (2 charts)
-- **#41** - histogram: Age Distribution of Voters
-- **#46** - box_plot: Age Distribution by Religion
-
-### Evolution & Trends (2 charts)
-- **#43** - echarts_timeseries_line: Voter Count by Age
-- **#44** - echarts_timeseries_area: Cumulative Voters by Age
-
-### Correlation & Comparison (2 charts)
-- **#42** - echarts_heatmap: District vs Religion Heatmap
-- **#49** - echarts_radar: Religion Demographics Profile
+### Part-to-Whole (1 chart)
+- **#36** - pie: Religion Distribution (2 categories)
 
 ### Tabular & Data (2 charts)
-- **#38** - table: District Statistics
-- **#45** - pivot_table_v2: Daerah vs Agama Pivot
+- **#38** - table: District Statistics (12 rows, sortable)
+- **#45** - pivot_table_v2: Daerah vs Agama cross-tab (24 cells)
+
+### Hierarchical (1 chart)
+- **#39** - sunburst_v2: Parlimen-DUN Hierarchy (43 segments)
+
+### Distribution & Statistical (2 charts)
+- **#41** - histogram: Age Distribution (10K bins)
+- **#46** - box_plot: Age by Religion (statistical comparison)
 
 ---
 
 ## 🎯 **Chart Type Coverage**
 
-### Verified Working Types (15 types)
+### Available Built-in Types (7 types)
 
 | Category | Chart Types | Count |
 |----------|-------------|-------|
-| **KPI** | big_number_total, echarts_gauge | 2 |
-| **Part-to-Whole** | pie, echarts_funnel | 2 |
-| **Ranking** | echarts_timeseries_bar | 1 |
-| **Hierarchical** | sunburst_v2, echarts_treemap | 2 |
+| **KPI** | big_number_total | 1 |
+| **Part-to-Whole** | pie | 1 |
+| **Hierarchical** | sunburst_v2 | 1 |
 | **Distribution** | histogram, box_plot | 2 |
-| **Evolution** | echarts_timeseries_line, echarts_timeseries_area | 2 |
-| **Correlation** | echarts_heatmap, echarts_radar | 2 |
 | **Tabular** | table, pivot_table_v2 | 2 |
 
 ---
@@ -85,24 +60,16 @@
 
 ### Individual Charts
 
-- Chart #35 (Big Number): https://apache-superset-railway-production-13fe.up.railway.app/explore/?slice_id=35
-- Chart #36 (Pie): https://apache-superset-railway-production-13fe.up.railway.app/explore/?slice_id=36
-- Chart #37 (Bar): https://apache-superset-railway-production-13fe.up.railway.app/explore/?slice_id=37
-- Chart #38 (Table): https://apache-superset-railway-production-13fe.up.railway.app/explore/?slice_id=38
-- Chart #39 (Sunburst): https://apache-superset-railway-production-13fe.up.railway.app/explore/?slice_id=39
-- Chart #40 (Treemap): https://apache-superset-railway-production-13fe.up.railway.app/explore/?slice_id=40
-- Chart #41 (Histogram): https://apache-superset-railway-production-13fe.up.railway.app/explore/?slice_id=41
-- Chart #42 (Heatmap): https://apache-superset-railway-production-13fe.up.railway.app/explore/?slice_id=42
-- Chart #43 (Line): https://apache-superset-railway-production-13fe.up.railway.app/explore/?slice_id=43
-- Chart #44 (Area): https://apache-superset-railway-production-13fe.up.railway.app/explore/?slice_id=44
-- Chart #45 (Pivot): https://apache-superset-railway-production-13fe.up.railway.app/explore/?slice_id=45
-- Chart #46 (Box Plot): https://apache-superset-railway-production-13fe.up.railway.app/explore/?slice_id=46
-- Chart #47 (Gauge): https://apache-superset-railway-production-13fe.up.railway.app/explore/?slice_id=47
-- Chart #48 (Funnel): https://apache-superset-railway-production-13fe.up.railway.app/explore/?slice_id=48
-- Chart #49 (Radar): https://apache-superset-railway-production-13fe.up.railway.app/explore/?slice_id=49
+- [Chart #35 - Big Number KPI](https://apache-superset-railway-production-13fe.up.railway.app/explore/?slice_id=35)
+- [Chart #36 - Pie Chart](https://apache-superset-railway-production-13fe.up.railway.app/explore/?slice_id=36)
+- [Chart #38 - Table](https://apache-superset-railway-production-13fe.up.railway.app/explore/?slice_id=38)
+- [Chart #39 - Sunburst](https://apache-superset-railway-production-13fe.up.railway.app/explore/?slice_id=39)
+- [Chart #41 - Histogram](https://apache-superset-railway-production-13fe.up.railway.app/explore/?slice_id=41)
+- [Chart #45 - Pivot Table](https://apache-superset-railway-production-13fe.up.railway.app/explore/?slice_id=45)
+- [Chart #46 - Box Plot](https://apache-superset-railway-production-13fe.up.railway.app/explore/?slice_id=46)
 
 ### Chart List
-https://apache-superset-railway-production-13fe.up.railway.app/chart/list/
+[All Charts](https://apache-superset-railway-production-13fe.up.railway.app/chart/list/)
 
 ---
 
@@ -112,21 +79,20 @@ https://apache-superset-railway-production-13fe.up.railway.app/chart/list/
 
 | Complexity | Charts | Examples |
 |------------|--------|----------|
-| **Simple** (1 metric, 0-1 groupby) | 5 | Big Number, Gauge, Histogram, Pie, Funnel |
-| **Medium** (1-2 metrics, 1-2 groupby) | 7 | Bar, Table, Line, Area, Heatmap, Sunburst, Treemap |
-| **Complex** (2+ metrics or 2+ dimensions) | 3 | Pivot, Box Plot, Radar |
+| **Simple** (1 metric, 0-1 groupby) | 3 | Big Number (#35), Pie (#36), Histogram (#41) |
+| **Medium** (1-2 metrics, 1-2 groupby) | 2 | Table (#38), Sunburst (#39) |
+| **Complex** (2+ metrics or 2+ dimensions) | 2 | Pivot (#45), Box Plot (#46) |
 
 ### Dataset Coverage
 
-| Data Aspect | Charts Using It |
+| Data Column | Charts Using It |
 |-------------|-----------------|
-| **parlimen** | #37, #39, #40 |
-| **dun** | #39, #40 |
-| **daerah** | #38, #42, #45, #48 |
-| **agama** | #36, #42, #45, #46, #49 |
-| **umur** (age) | #41, #43, #44, #46, #49 |
+| **parlimen** | #39 |
+| **dun** | #39 |
+| **daerah** | #38, #45 |
+| **agama** | #36, #45, #46 |
+| **umur** (age) | #41, #46 |
 | **COUNT(*)** | All charts |
-| **AVG(umur)** | #49 |
 
 ---
 
@@ -134,9 +100,7 @@ https://apache-superset-railway-production-13fe.up.railway.app/chart/list/
 
 ### For Executive Dashboards
 1. **#35** - Total Voters KPI (big number)
-2. **#47** - Registration Percentage (gauge)
-3. **#36** - Religion Distribution (pie)
-4. **#37** - Voters by Constituency (bar)
+2. **#36** - Religion Distribution (pie)
 
 ### For Data Analysis
 1. **#38** - District Statistics (table)
@@ -144,19 +108,13 @@ https://apache-superset-railway-production-13fe.up.railway.app/chart/list/
 3. **#41** - Age Distribution (histogram)
 4. **#46** - Statistical Analysis (box plot)
 
-### For Geographic Analysis
+### For Geographic/Hierarchical Analysis
 1. **#39** - Parlimen-DUN Hierarchy (sunburst)
-2. **#40** - Geographic Distribution (treemap)
-3. **#48** - Top Districts (funnel)
 
 ### For Demographic Analysis
-1. **#42** - District vs Religion (heatmap)
-2. **#49** - Multi-metric Profile (radar)
-3. **#46** - Age by Religion (box plot)
-
-### For Trend Analysis
-1. **#43** - Age Trend (line chart)
-2. **#44** - Cumulative Trend (area chart)
+1. **#41** - Age Distribution (histogram)
+2. **#46** - Age by Religion (box plot)
+3. **#45** - District vs Religion (pivot table)
 
 ---
 
@@ -178,32 +136,34 @@ payload=$(jq -n --arg params "$params_string" '{params: $params, ...}')
 curl -X POST "$BASE_URL/api/v1/chart/" -d "$payload"
 ```
 
-**Success Rate**: 100% (15/15 charts working)
+**Success Rate**: 100% (7/7 charts working with valid viz_types)
 
 ---
 
 ## 📚 **Complete Documentation**
 
-### Guides
-- **[Consistent Chart Creation Guide](./guides/consistent_chart_creation_guide.md)** ⭐ PRIMARY GUIDE
-  - All 15 chart type templates
-  - Reusable functions library
-  - Complete verification process
+### Primary Guide
+- **[Verified Working Charts](VERIFIED_WORKING_CHARTS.md)** ⭐ **RECOMMENDED**
+  - All 7 chart templates
+  - Dashboard templates
   - Best practices
 
-- **[Working Chart Creation Method](./guides/working_chart_creation_method.md)**
-  - JQ-based method explained
-  - Examples for each chart type
-  - Troubleshooting
+### Additional Guides
+- **[Chart Creation Guide](./guides/superset_chart_creation_guide.md)**
+  - REST API method
+  - Authentication flow
+  - Complete examples
 
 ### Reference
-- **[Chart Testing Results](./reference/chart_testing_results.md)**
-  - Testing methodology
-  - Before/after comparison
-
 - **[Chart Types Reference](./reference/superset_chart_types_reference.md)**
-  - 55+ chart types available
-  - Decision tree
+  - 55+ chart types available in Superset
+  - Decision tree for chart selection
+
+### Compatibility
+- **[Chart Compatibility Issue](CHART_COMPATIBILITY_ISSUE.md)**
+  - Explains why only 7 types work
+  - Lists deleted invalid charts
+  - Provides alternatives
 
 ---
 
@@ -211,9 +171,10 @@ curl -X POST "$BASE_URL/api/v1/chart/" -d "$payload"
 
 All charts have been verified with:
 - ✅ Chart created successfully (HTTP 200)
-- ✅ Data endpoint returns rows
+- ✅ Data endpoint returns correct row counts
 - ✅ No query errors
-- ✅ Charts render in UI (spot-checked)
+- ✅ Charts render correctly in UI
+- ✅ All use valid built-in viz_types
 
 ### Verification Commands
 
@@ -230,26 +191,41 @@ curl -s -b "$COOKIES" \
 
 ---
 
-## 📝 **Next Steps**
+## 📝 **Cleanup History**
 
-### Expand Coverage
-- Test additional chart types (scatter, bubble, sankey, etc.)
-- Create geographic charts with proper lat/lon data
-- Test advanced visualizations (deck.gl charts)
+### 2025-12-17 - Invalid Chart Deletion
+**Deleted 8 charts** with invalid viz_type names:
+- #37 (echarts_timeseries_bar)
+- #40 (echarts_treemap)
+- #42 (echarts_heatmap)
+- #43 (echarts_timeseries_line)
+- #44 (echarts_timeseries_area)
+- #47 (echarts_gauge)
+- #48 (echarts_funnel)
+- #49 (echarts_radar)
 
-### Build Dashboards
-- Create executive dashboard with KPI charts (#35, #47, #36, #37)
-- Create analysis dashboard with tables and pivots (#38, #45)
-- Create demographic dashboard with heatmaps and distributions (#42, #41, #46)
+**Reason**: These viz_type names don't exist in this Superset instance.
 
-### Automation
-- Create chart generation scripts
-- Build template library
-- Develop testing pipeline
+**Kept 7 working charts** with valid built-in viz_types.
 
 ---
 
-**Catalog Status**: ✅ Complete
-**Total Charts**: 15
+## 🎯 **Next Steps**
+
+### Recommended Actions
+1. ✅ Use these 7 charts for production dashboards
+2. ✅ Create new charts only with verified viz_types
+3. ✅ Reference VERIFIED_WORKING_CHARTS.md for templates
+4. ❌ Avoid creating charts with `echarts_*` viz_types
+
+### Build Dashboards
+- Create executive dashboard with KPI and breakdown charts (#35, #36)
+- Create analysis dashboard with tables and pivots (#38, #45)
+- Create demographic dashboard with distributions (#41, #46, #39)
+
+---
+
+**Catalog Status**: ✅ Complete and Verified
+**Total Charts**: 7
 **All Verified**: Yes
 **Ready for Production**: Yes

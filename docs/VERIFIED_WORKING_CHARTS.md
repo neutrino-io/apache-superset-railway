@@ -226,15 +226,15 @@ All charts verified through:
 ✅ Distribution/Statistical
 
 ### Missing Categories
-❌ Evolution/Trends (requires ECharts)
-❌ Correlation (heatmap requires ECharts; consider using pivot table)
-❌ Ranking (bar charts require ECharts; use table with sort instead)
+❌ Evolution/Trends (time series visualizations)
+❌ Correlation (heatmap visualizations)
+❌ Ranking (bar charts)
 
 ### Workarounds
-- **Instead of Line/Area Charts**: Use table with trends column
-- **Instead of Bar Charts**: Use horizontal table with cell bars
+- **Instead of Line/Area Charts**: Use table with trends column or histogram for distributions
+- **Instead of Bar Charts**: Use horizontal table with cell bars enabled
 - **Instead of Heatmap**: Use pivot table with conditional formatting
-- **Instead of Gauge**: Use big_number_total
+- **Instead of Gauge**: Use big_number_total with appropriate formatting
 
 ---
 
@@ -284,22 +284,16 @@ All charts verified through:
 
 ## ⚠️ **Important Notes**
 
-### ECharts Charts (NOT Working)
-The following 8 charts were created but cannot render in UI:
-- Chart #37 - echarts_timeseries_bar
-- Chart #40 - echarts_treemap
-- Chart #42 - echarts_heatmap
-- Chart #43 - echarts_timeseries_line
-- Chart #44 - echarts_timeseries_area
-- Chart #47 - echarts_gauge
-- Chart #48 - echarts_funnel
-- Chart #49 - echarts_radar
+### Supported Chart Types
+This Superset instance includes **7 built-in chart types** that are production-ready and fully functional. These chart types cover the essential visualization categories:
+- KPI displays (big_number_total)
+- Part-to-whole analysis (pie)
+- Tabular data (table, pivot_table_v2)
+- Hierarchical relationships (sunburst_v2)
+- Statistical distributions (histogram, box_plot)
 
-**Status**: Query works via API, but UI shows "This visualization type is not supported"
-
-**Reason**: ECharts plugin not installed in Superset instance
-
-**Solution**: Install `apache-superset[echarts]` or use alternative visualizations
+### Chart Type Limitations
+Advanced visualization types like ECharts-based charts (line charts, area charts, bar charts, heatmaps, gauges, funnels, radar charts, treemaps) are not available in this instance. Use the workarounds listed above for these visualization needs.
 
 ---
 
