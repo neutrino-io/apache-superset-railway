@@ -68,6 +68,13 @@ try:
     print('✓ ClickHouse native dialects registered successfully')
 except Exception as e:
     print('✗ Dialect registration failed:', e)
+
+try:
+    from PIL import Image
+    import PIL
+    print(f'✓ Pillow (PIL) version {PIL.__version__} - Screenshot and PDF generation enabled')
+except ImportError as e:
+    print('✗ Pillow (PIL) not available:', e)
 "
 
 echo "======================================================================"
@@ -99,11 +106,13 @@ superset init || {
     exit 1
 }
 
-# Load example data (optional - comment out if not needed)
-echo "Loading example data..."
-superset load-examples || {
-    echo "Note: Example data loading failed or already loaded (this is normal)"
-}
+# Load example data is DISABLED for production
+# Uncomment the following lines if you want to load example datasets for testing
+# echo "Loading example data..."
+# superset load-examples || {
+#     echo "Note: Example data loading failed or already loaded (this is normal)"
+# }
+echo "Skipping example data loading (disabled for production)"
 
 echo "======================================================================"
 echo "Superset Initialization Complete"
@@ -113,7 +122,9 @@ echo "  - Admin Username: $ADMIN_USERNAME"
 echo "  - Admin Email: $ADMIN_EMAIL"
 echo "  - Database: PostgreSQL"
 echo "  - ClickHouse Support: Enabled"
+echo "  - Pillow (PIL): Enabled for screenshots and PDFs"
 echo "  - Data Directory: /app/superset_home"
+echo "  - Example Data: Disabled (production mode)"
 echo "======================================================================"
 echo "Starting Superset web server..."
 echo "======================================================================"

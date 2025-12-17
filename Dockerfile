@@ -36,8 +36,17 @@ RUN /usr/local/bin/pip install --no-cache-dir \
     pyodbc \
     mysqlclient
 
+# Install Pillow for screenshot and PDF generation features
+# This enables dashboard exports, reports, and thumbnails
+RUN /usr/local/bin/pip install --no-cache-dir \
+    --target=/app/.venv/lib/python3.10/site-packages \
+    pillow
+
 # Verify psycopg2 installation
 RUN python3 -c "import psycopg2; print(f'✓ psycopg2 version: {psycopg2.__version__}')"
+
+# Verify Pillow installation
+RUN python3 -c "from PIL import Image; import PIL; print(f'✓ Pillow version: {PIL.__version__}')"
 
 # Create persistent data directories
 # These will be mounted as volumes in Railway
@@ -79,6 +88,7 @@ RUN echo "====== Verifying Database Drivers ======" && \
     python3 -c "import pymongo; print(f'✓ pymongo: {pymongo.__version__}')" && \
     python3 -c "import clickhouse_connect; print(f'✓ clickhouse-connect: {clickhouse_connect.__version__}')" && \
     python3 -c "import clickhouse_driver; print(f'✓ clickhouse-driver: {clickhouse_driver.__version__}')" && \
+    python3 -c "from PIL import Image; import PIL; print(f'✓ Pillow: {PIL.__version__}')" && \
     echo "====== All drivers verified successfully ======"
 
 # Switch to superset user for security

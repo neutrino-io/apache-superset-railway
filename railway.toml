@@ -50,3 +50,29 @@ UPLOAD_FOLDER = "/app/superset_home/uploads"
 # ClickHouse Configuration (for data source connections)
 CLICKHOUSE_HTTP_PORT = "8123"
 CLICKHOUSE_NATIVE_PORT = "9000"
+
+# ============================================================================
+# Optional: Redis Configuration for Production
+# ============================================================================
+# Redis is recommended for production deployments to enable:
+# - Distributed rate limiting (Flask-Limiter)
+# - Distributed caching
+# - Session storage across multiple instances
+#
+# To enable Redis support:
+# 1. Deploy a Redis service on Railway
+# 2. Add the Redis connection URL as an environment variable:
+#
+# REDIS_URL = "redis://:password@redis-host:6379/0"
+#
+# If REDIS_URL is not set, Superset will fall back to in-memory storage
+# which works for single-instance deployments but has limitations:
+# - Rate limiting state is not shared across instances
+# - Cache is not shared across instances
+# - Sessions are not persistent across restarts
+#
+# Example Redis deployment on Railway:
+# 1. Create new Redis service in Railway
+# 2. Copy the connection URL from Railway's Redis service
+# 3. Set REDIS_URL environment variable in this service
+# ============================================================================

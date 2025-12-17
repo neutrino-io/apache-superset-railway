@@ -40,6 +40,14 @@ try:
 except ImportError as e:
     print(f"Warning: ClickHouse Driver not available: {e}")
 
+# Verify Pillow is available for screenshots and PDF generation
+try:
+    from PIL import Image
+    import PIL
+    print(f"✓ Pillow (PIL) version {PIL.__version__} - Screenshot and PDF generation enabled")
+except ImportError as e:
+    print(f"Warning: Pillow (PIL) not available: {e}")
+
 # Register ClickHouse dialect with proper error handling
 # Use clickhouse-driver for native protocol (Railway), clickhouse-connect for HTTP
 try:
@@ -116,6 +124,48 @@ os.makedirs(DATA_DIR, exist_ok=True)
 os.makedirs(UPLOAD_FOLDER, exist_ok=True)
 
 # ============================================================================
+# Rate Limiting Configuration (Flask-Limiter)
+# ============================================================================
+# Configure Redis for distributed rate limiting in production
+# Falls back to in-memory storage for development/testing
+REDIS_URL = os.environ.get('REDIS_URL', None)
+
+if REDIS_URL:
+    # Production: Use Redis for distributed rate limiting
+    RATELIMIT_STORAGE_URI = REDIS_URL
+    print(f"✓ Rate limiting configured with Redis: {REDIS_URL.split('@')[1] if '@' in REDIS_URL else 'configured'}")
+else:
+    # Development: Use in-memory storage (not recommended for production)
+    RATELIMIT_STORAGE_URI = "memory://"
+    print("⚠ Rate limiting using in-memory storage (set REDIS_URL for production)")
+
+# Rate limiting configuration
+RATELIMIT_ENABLED = True
+RATELIMIT_APPLICATION = "superset"
+
+# ============================================================================
+# Cache Configuration
+# ============================================================================
+# Configure Redis for caching in production if available
+# Falls back to SimpleCache for development
+if REDIS_URL:
+    # Production: Use Redis for distributed caching
+    CACHE_CONFIG = {
+        'CACHE_TYPE': 'RedisCache',
+        'CACHE_REDIS_URL': REDIS_URL,
+        'CACHE_DEFAULT_TIMEOUT': 300,
+        'CACHE_KEY_PREFIX': 'superset_'
+    }
+    print("✓ Cache configured with Redis")
+else:
+    # Development: Use simple in-memory cache
+    CACHE_CONFIG = {
+        'CACHE_TYPE': 'SimpleCache',
+        'CACHE_DEFAULT_TIMEOUT': 300
+    }
+    print("⚠ Cache using in-memory storage (set REDIS_URL for production)")
+
+# ============================================================================
 # Helper Functions
 # ============================================================================
 # Custom database engine validation
@@ -156,12 +206,6 @@ RAILWAY_CLICKHOUSE_URI = get_railway_clickhouse_uri()
 SUPERSET_WEBSERVER_TIMEOUT = 300
 ROW_LIMIT = 50000
 
-# Cache configuration (optional, can be enhanced with Redis)
-CACHE_CONFIG = {
-    'CACHE_TYPE': 'SimpleCache',
-    'CACHE_DEFAULT_TIMEOUT': 300
-}
-
 # Print configuration summary
 print("=" * 70)
 print("Superset Configuration Summary")
@@ -171,4 +215,6 @@ print(f"Metadata Database: {SQLALCHEMY_DATABASE_URI.split('@')[0] if '@' in SQLA
 print(f"Data Directory: {DATA_DIR}")
 print(f"Upload Directory: {UPLOAD_FOLDER}")
 print(f"ClickHouse Support: Enabled (Native Protocol)")
+print(f"Rate Limiting: {'Redis' if REDIS_URL else 'In-Memory'}")
+print(f"Cache Backend: {'Redis' if REDIS_URL else 'SimpleCache'}")
 print("=" * 70)
