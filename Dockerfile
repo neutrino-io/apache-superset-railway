@@ -58,10 +58,11 @@ RUN chmod +x ./superset_init.sh
 COPY /config/superset_config.py /app/
 COPY clickhouse_railway_engine.py /app/
 
-# Configure Superset paths
+# Configure Superset paths and application
 ENV SUPERSET_CONFIG_PATH=/app/superset_config.py
 ENV SECRET_KEY=$SECRET_KEY
 ENV SUPERSET_HOME=/app/superset_home
+ENV FLASK_APP=superset.app:create_app()
 
 # Set Python path dynamically based on detected Python version
 # This ensures all installed packages are available
