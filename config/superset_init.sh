@@ -6,11 +6,13 @@ echo "Superset Initialization Starting"
 echo "======================================================================"
 
 # Create data directories if they don't exist (needed for volume mounting)
-echo "Ensuring data directories exist..."
+# Running as root to handle volume permissions
+echo "Ensuring data directories exist with correct permissions..."
 mkdir -p /app/superset_home/data
 mkdir -p /app/superset_home/uploads
 mkdir -p /app/superset_home/logs
-echo "✓ Data directories ready"
+chown -R superset:superset /app/superset_home
+echo "✓ Data directories ready with superset user ownership"
 
 # Wait for the application to fully initialize
 echo "Waiting for application initialization..."
@@ -88,27 +90,30 @@ echo "======================================================================"
 echo "Superset Database Initialization"
 echo "======================================================================"
 
+# Run all Superset commands as superset user (we created dirs as root above)
+echo "Switching to superset user for database operations..."
+
 # Upgrade the database schema
 echo "Upgrading Superset metadata database..."
-superset db upgrade || {
+su -s /bin/bash superset -c "superset db upgrade" || {
     echo "ERROR: Database upgrade failed"
     exit 1
 }
 
 # Create admin user
 echo "Creating admin user..."
-superset fab create-admin \
-    --username "$ADMIN_USERNAME" \
+su -s /bin/bash superset -c "superset fab create-admin \
+    --username '$ADMIN_USERNAME' \
     --firstname Superset \
     --lastname Admin \
-    --email "$ADMIN_EMAIL" \
-    --password "$ADMIN_PASSWORD" || {
+    --email '$ADMIN_EMAIL' \
+    --password '$ADMIN_PASSWORD'" || {
     echo "Note: Admin user may already exist (this is normal on restart)"
 }
 
 # Initialize roles and permissions
 echo "Initializing roles and permissions..."
-superset init || {
+su -s /bin/bash superset -c "superset init" || {
     echo "ERROR: Superset initialization failed"
     exit 1
 }
@@ -138,5 +143,5 @@ echo "======================================================================"
 echo "FLASK_APP is set to: $FLASK_APP"
 echo "======================================================================"
 
-# Start the server
-exec /usr/bin/run-server.sh
+# Start the server as superset user
+exec su -s /bin/bash superset -c "/usr/bin/run-server.sh"

@@ -91,9 +91,9 @@ RUN echo "====== Verifying Database Drivers ======" && \
     python3 -c "from PIL import Image; import PIL; print(f'✓ Pillow: {PIL.__version__}')" && \
     echo "====== All drivers verified successfully ======"
 
-# Switch to superset user for security
-# Note: Volume mounting is configured in railway.toml
-USER superset
+# Note: Staying as root to allow init script to create volume directories
+# Init script will switch to superset user after directory setup
+# USER superset
 
 # Expose port (Railway will map this automatically)
 EXPOSE 8088
