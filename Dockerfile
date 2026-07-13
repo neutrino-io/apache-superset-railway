@@ -70,6 +70,9 @@ ENV ADMIN_PASSWORD=$ADMIN_PASSWORD
 COPY scripts/superset_init.sh ./superset_init.sh
 RUN chmod +x ./superset_init.sh
 
+COPY scripts/db_upgrade_safe.py /app/scripts/db_upgrade_safe.py
+RUN chmod +x /app/scripts/db_upgrade_safe.py
+
 COPY config/superset_config.py /app/
 COPY scripts/clickhouse_railway_engine.py /app/
 

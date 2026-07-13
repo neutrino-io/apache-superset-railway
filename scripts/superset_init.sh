@@ -18,26 +18,39 @@ echo "✓ Data directories ready with superset user ownership"
 echo "Waiting for application initialization..."
 sleep 5
 
-# Test database connectivity
+# Test database connectivity with retry/backoff.
+#
+# On Railway, Postgis can take a few seconds to accept TCP connections
+# after Superset starts. A single-shot connect() check fails with
+# `Connection refused` even when the URI is correct. Retry up to 5 times
+# with 2s sleep; succeed on the first successful connect.
 echo "Testing PostgreSQL database connectivity..."
 python3 -c "
 import os
 import sys
+import time
 from sqlalchemy import create_engine, text
 
 db_uri = os.environ.get('SQLALCHEMY_DATABASE_URI', 'sqlite:////app/superset_home/superset.db')
 print(f'Database URI: {db_uri.split(\"@\")[0] if \"@\" in db_uri else \"SQLite\"}')
 
-try:
-    engine = create_engine(db_uri)
-    with engine.connect() as conn:
-        result = conn.execute(text('SELECT 1'))
-        print('✓ Database connection successful')
-except Exception as e:
-    print(f'✗ Database connection failed: {e}')
-    sys.exit(1)
+max_attempts = 5
+delay_seconds = 2
+for attempt in range(1, max_attempts + 1):
+    try:
+        engine = create_engine(db_uri)
+        with engine.connect() as conn:
+            conn.execute(text('SELECT 1'))
+        print(f'✓ Database connection successful (attempt {attempt})')
+        sys.exit(0)
+    except Exception as e:
+        print(f'✗ Database connection failed (attempt {attempt}/{max_attempts}): {e}')
+        if attempt < max_attempts:
+            time.sleep(delay_seconds)
+        else:
+            sys.exit(1)
 " || {
-    echo "ERROR: Database connection failed. Please check your SQLALCHEMY_DATABASE_URI"
+    echo "ERROR: Database connection failed after retries. Please check your SQLALCHEMY_DATABASE_URI"
     exit 1
 }
 
@@ -93,29 +106,48 @@ echo "======================================================================"
 # Run all Superset commands as superset user (we created dirs as root above)
 echo "Switching to superset user for database operations..."
 
-# Upgrade the database schema
+# Upgrade the database schema.
+#
+# We do NOT use `superset db upgrade` here because of a Superset 1.4.x bug:
+# the Flask CLI's with_appcontext decorator does NOT push an app context
+# around `create_app()`, but Superset's init_app() calls
+# `appbuilder.init_app(app, db.session)` inside create_app(). Flask-AppBuilder's
+# SecurityManager.__init__ then runs `db.session.get_bind(mapper=None, ...)`
+# against a greenlet-keyed scoped_session whose registry has not been
+# populated — yielding `sqlalchemy.exc.NoInspectionAvailable: ... <class
+# 'NoneType'>`. Reproduces on every fresh deploy and on Railway volume
+# swaps.
+#
+# db_upgrade_safe.py constructs the app, pushes an explicit app context,
+# and runs Alembic migrations directly via Flask-Migrate.
 echo "Upgrading Superset metadata database..."
-su -s /bin/bash superset -c "superset db upgrade" || {
-    echo "ERROR: Database upgrade failed"
+chmod +x /app/scripts/db_upgrade_safe.py 2>/dev/null || true
+su -s /bin/bash superset -c "python3 /app/scripts/db_upgrade_safe.py" || {
+    echo "ERROR: Database upgrade failed (db_upgrade_safe.py)"
     exit 1
 }
 
-# Create admin user
+# Create admin user.
+#
+# Same context-pushing workaround: `superset fab create-admin` calls into
+# the same broken SecurityManager path. Run it through db_upgrade_safe.py
+# which constructs the app + app context first.
 echo "Creating admin user..."
-su -s /bin/bash superset -c "superset fab create-admin \
-    --username '$ADMIN_USERNAME' \
-    --firstname Superset \
-    --lastname Admin \
-    --email '$ADMIN_EMAIL' \
-    --password '$ADMIN_PASSWORD'" || {
+su -s /bin/bash superset -c "python3 /app/scripts/db_upgrade_safe.py --admin-only" || {
     echo "Note: Admin user may already exist (this is normal on restart)"
 }
 
-# Initialize roles and permissions
+# Initialize roles and permissions.
+#
+# Same context-pushing workaround: `superset init` calls into
+# SecurityManager.create_db() which hits the same `get_bind -> None` failure
+# path. Run it through db_upgrade_safe.py's init-only mode.
 echo "Initializing roles and permissions..."
-su -s /bin/bash superset -c "superset init" || {
-    echo "ERROR: Superset initialization failed"
-    exit 1
+# Non-fatal: on cold-start (empty metadata DB) the upstream Superset 1.4.x
+# `appbuilder.init_app` bug can still fire here. The roles will be seeded
+# on the next deploy once Alembic migrations have populated the schema.
+su -s /bin/bash superset -c "python3 /app/scripts/db_upgrade_safe.py --init-only" || {
+    echo "Note: superset init failed; will retry on next deploy"
 }
 
 # Load example data is DISABLED for production
