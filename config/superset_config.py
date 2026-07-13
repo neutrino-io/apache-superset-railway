@@ -209,7 +209,7 @@ RAILWAY_CLICKHOUSE_URI = get_railway_clickhouse_uri()
 # for every request. Do NOT expose publicly if you keep this setting —
 # anyone with the URL can act as that user.
 MCP_AUTH_ENABLED = False
-MCP_DEV_USERNAME = os.environ.get("MCP_DEV_USERNAME", "admin")
+MCP_DEV_USERNAME = os.environ.get("MCP_DEV_USERNAME", "azrijamil")
 # Bind on all interfaces so Railway's TCP proxy can reach it.
 MCP_SERVICE_HOST = "0.0.0.0"
 MCP_SERVICE_PORT = int(os.environ.get("MCP_SERVICE_PORT", "5008"))
@@ -218,6 +218,15 @@ MCP_SERVICE_PORT = int(os.environ.get("MCP_SERVICE_PORT", "5008"))
 MCP_SERVICE_URL = os.environ.get(
     "MCP_SERVICE_URL",
     os.environ.get("RAILWAY_PUBLIC_DOMAIN"),
+)
+
+# Public-facing URL for the Superset web UI. The MCP service uses this
+# to build dashboard/chart/explore links. Without this, links in
+# MCP responses point at the container's internal address (e.g.,
+# http://0.0.0.0:8080/...). Set it to your Railway public domain.
+WEBDRIVER_BASEURL_USER_FRIENDLY = (
+    os.environ.get("WEBDRIVER_BASEURL_USER_FRIENDLY")
+    or "https://apache-superset-railway-production-13fe.up.railway.app"
 )
 # RBAC: enforce Superset's role-based access control on MCP tool calls.
 MCP_RBAC_ENABLED = True
