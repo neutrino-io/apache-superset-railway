@@ -199,6 +199,37 @@ RAILWAY_CLICKHOUSE_URI = get_railway_clickhouse_uri()
 # ============================================================================
 # Production Configuration
 # ============================================================================
+# MCP Server Configuration (Model Context Protocol for AI clients)
+# ============================================================================
+# Run the MCP server as a separate process alongside the web server:
+#
+#     superset mcp run --host 0.0.0.0 --port 5008
+#
+# Auth: dev mode (no auth). The MCP_DEV_USERNAME impersonates that user
+# for every request. Do NOT expose publicly if you keep this setting —
+# anyone with the URL can act as that user.
+MCP_AUTH_ENABLED = False
+MCP_DEV_USERNAME = os.environ.get("MCP_DEV_USERNAME", "admin")
+# Bind on all interfaces so Railway's TCP proxy can reach it.
+MCP_SERVICE_HOST = "0.0.0.0"
+MCP_SERVICE_PORT = int(os.environ.get("MCP_SERVICE_PORT", "5008"))
+# Public-facing URL for any links the MCP server emits (chart previews,
+# SQL Lab URLs). Falls back to the Railway public domain when unset.
+MCP_SERVICE_URL = os.environ.get(
+    "MCP_SERVICE_URL",
+    os.environ.get("RAILWAY_PUBLIC_DOMAIN"),
+)
+# RBAC: enforce Superset's role-based access control on MCP tool calls.
+MCP_RBAC_ENABLED = True
+# Response size guard: cap returned lists so we don't blow LLM context.
+MCP_RESPONSE_SIZE_CONFIG = {
+    "enabled": True,
+    "token_limit": 25000,
+    "warn_threshold_pct": 80,
+    "max_list_items": 100,
+}
+
+
 # Additional production settings
 SUPERSET_WEBSERVER_TIMEOUT = 300
 ROW_LIMIT = 50000
@@ -214,4 +245,5 @@ print(f"Upload Directory: {UPLOAD_FOLDER}")
 print(f"ClickHouse Support: Enabled (Native Protocol)")
 print(f"Rate Limiting: {'Redis' if REDIS_URL else 'In-Memory'}")
 print(f"Cache Backend: {'Redis' if REDIS_URL else 'SimpleCache'}")
+print(f"MCP Server: {MCP_SERVICE_HOST}:{MCP_SERVICE_PORT} (auth={'enabled' if MCP_AUTH_ENABLED else 'dev-mode'})")
 print("=" * 70)

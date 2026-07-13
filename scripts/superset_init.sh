@@ -103,9 +103,21 @@ echo "======================================================================"
 echo "Superset Database Initialization"
 echo "======================================================================"
 
+# Start the MCP server in the background BEFORE the slow init steps.
+# It binds 0.0.0.0:5008, impersonates MCP_DEV_USERNAME for auth, and
+# detaches via setsid so it survives the rest of the init script.
+if [ -z "${SKIP_MCP:-}" ]; then
+    mkdir -p /app/superset_home/logs
+    setsid nohup /app/.venv/bin/superset mcp run \
+        --host 0.0.0.0 --port "${MCP_SERVICE_PORT:-5008}" \
+        >> /app/superset_home/logs/mcp.log 2>&1 < /dev/null &
+    MCP_PID=$!
+    echo "✓ MCP server starting (pid: $MCP_PID) — logs at /app/superset_home/logs/mcp.log"
+    sleep 3
+fi
+
 # Run all Superset commands as superset user (we created dirs as root above)
 echo "Switching to superset user for database operations..."
-
 # Upgrade the database schema.
 #
 # We do NOT use `superset db upgrade` here because of a Superset 1.4.x bug:
@@ -170,10 +182,29 @@ echo "  - Pillow (PIL): Enabled for screenshots and PDFs"
 echo "  - Data Directory: /app/superset_home"
 echo "  - Example Data: Disabled (production mode)"
 echo "======================================================================"
-echo "Starting Superset web server..."
+echo "Starting Superset web server (and MCP server)..."
 echo "======================================================================"
 echo "FLASK_APP is set to: $FLASK_APP"
 echo "======================================================================"
 
-# Start the server as superset user
+# Start the MCP server as a detached process so it survives the init
+# script's lifecycle. It binds to 0.0.0.0:5008 and impersonates the
+# configured MCP_DEV_USERNAME for every request.
+#
+# We use setsid + nohup so the MCP process is in its own session and
+# keeps running even if the init script's bash exits. The web server
+# stays in the foreground so Railway's health check still targets it.
+if [ -z "${SKIP_MCP:-}" ]; then
+    mkdir -p /app/superset_home/logs
+    setsid nohup /app/.venv/bin/superset mcp run \
+        --host 0.0.0.0 --port "${MCP_SERVICE_PORT:-5008}" \
+        >> /app/superset_home/logs/mcp.log 2>&1 < /dev/null &
+    MCP_PID=$!
+    echo "✓ MCP server starting (pid: $MCP_PID) — logs at /app/superset_home/logs/mcp.log"
+    # Give the MCP server a few seconds to bind its port before we move
+    # on, so the web server's startup isn't racing with the MCP.
+    sleep 3
+fi
+
+# Start the web server as the superset user in the foreground.
 exec su -s /bin/bash superset -c "/usr/bin/run-server.sh"

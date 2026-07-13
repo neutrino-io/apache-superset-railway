@@ -48,6 +48,11 @@ RUN /usr/local/bin/pip install --no-cache-dir \
     --target=/app/.venv/lib/python3.10/site-packages \
     apache-superset[echarts]
 
+# Install fastmcp for the MCP server (used by `superset mcp run`)
+RUN /usr/local/bin/pip install --no-cache-dir \
+    --target=/app/.venv/lib/python3.10/site-packages \
+    fastmcp
+
 # Verify psycopg2 installation
 RUN python3 -c "import psycopg2; print(f'✓ psycopg2 version: {psycopg2.__version__}')"
 
@@ -112,6 +117,8 @@ RUN echo "====== Verifying Database Drivers ======" && \
 # USER superset
 
 # Expose port (Railway will map this automatically)
-EXPOSE 8088
+# Expose ports (Railway maps the web server on 8088 and the MCP server
+# on 5008).
+EXPOSE 8088 5008
 
 ENTRYPOINT ["./superset_init.sh"]
