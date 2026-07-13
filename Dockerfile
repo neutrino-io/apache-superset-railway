@@ -73,6 +73,12 @@ RUN chmod +x ./superset_init.sh
 COPY scripts/db_upgrade_safe.py /app/scripts/db_upgrade_safe.py
 RUN chmod +x /app/scripts/db_upgrade_safe.py
 
+# Auto-load the FAB patches for every Python process (gunicorn workers,
+# ad-hoc `python3` invocations, etc.). sitecustomize.py is run by Python's
+# site initialization on every startup; placing it in the venv's
+# site-packages ensures all of Superset's processes pick it up.
+COPY scripts/sitecustomize.py /app/.venv/lib/python3.10/site-packages/sitecustomize.py
+
 COPY config/superset_config.py /app/
 COPY scripts/clickhouse_railway_engine.py /app/
 
