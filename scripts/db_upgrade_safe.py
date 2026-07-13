@@ -193,22 +193,30 @@ def _run_alembic_upgrade(app: Any) -> None:
         _log("Alembic upgrade() complete.")
 
 
-def _run_superset_cli(app: Any, subcommand: str, args: list[str]) -> None:
-    """Run a Superset CLI command via FlaskGroup, inside our app context."""
-    from flask.cli import FlaskGroup
-
-    with app.app_context():
-        cli = FlaskGroup(app=app)
-        cli.main([subcommand, *args])
-
-
 def _run_superset_init(app: Any) -> None:
+    """Seed roles and permissions.
+
+    Equivalent to `superset init`. We bypass FlaskGroup (which fails on
+    click 8.x with `app=` kwarg) and call the underlying logic directly
+    inside an app context.
+    """
     _log("Seeding roles and permissions (superset init)...")
-    _run_superset_cli(app, "init", [])
+    with app.app_context():
+        from superset.extensions import appbuilder, security_manager
+
+        appbuilder.add_permissions(update_perms=True)
+        security_manager.sync_role_definitions()
     _log("`superset init` complete.")
 
 
 def _run_fab_create_admin(app: Any) -> None:
+    """Create the default admin user.
+
+    Equivalent to `superset fab create-admin`. We bypass FlaskGroup (which
+    fails on click 8.x with `app=` kwarg) and call SecurityManager.add_user
+    directly inside an app context. Idempotent: add_user returns False
+    for duplicate users, which we treat as success.
+    """
     username = os.environ.get("ADMIN_USERNAME")
     password = os.environ.get("ADMIN_PASSWORD")
     email = os.environ.get("ADMIN_EMAIL")
@@ -222,33 +230,34 @@ def _run_fab_create_admin(app: Any) -> None:
     firstname = os.environ.get("ADMIN_FIRSTNAME", "Superset")
     lastname = os.environ.get("ADMIN_LASTNAME", "Admin")
     _log(f"Creating admin user {username!r}...")
-    try:
-        _run_superset_cli(
-            app,
-            "fab",
-            [
-                "create-admin",
-                "--username",
-                username,
-                "--firstname",
-                firstname,
-                "--lastname",
-                lastname,
-                "--email",
-                email,
-                "--password",
-                password,
-            ],
-        )
-        _log(f"Admin user {username!r} created.")
-    except SystemExit as exc:
-        if exc.code not in (None, 0):
+    with app.app_context():
+        from superset.extensions import appbuilder
+
+        sm = appbuilder.sm
+        existing = sm.find_user(username=username)
+        if existing:
+            _log(f"Admin user {username!r} already exists; skipping.")
+            return
+        existing_by_email = sm.find_user(email=email)
+        if existing_by_email:
             _log(
-                f"Admin user {username!r} likely already exists "
-                f"(exit={exc.code})."
+                f"User with email {email!r} already exists; skipping admin creation."
             )
-
-
+            return
+        role = sm.find_role(sm.auth_role_admin)
+        roles = [role] if role else []
+        result = sm.add_user(
+            username=username,
+            first_name=firstname,
+            last_name=lastname,
+            email=email,
+            password=password,
+            role=roles,
+        )
+        if result:
+            _log(f"Admin user {username!r} created.")
+        else:
+            _log(f"Failed to create admin user {username!r}.")
 def _parse_args(argv: list[str]) -> dict[str, bool]:
     flags = {
         "upgrade_only": False,
