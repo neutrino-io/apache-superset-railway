@@ -1,44 +1,44 @@
 """
-db_upgrade_safe.py — Workaround for Superset 1.4.x `NoInspectionAvailable` bug.
+db_upgrade_safe.py — Workaround for Superset 1.4.x cold-start boot bug.
 
 Why this exists
 ---------------
-`superset db upgrade` invokes `flask.cli.with_appcontext` which does NOT push
-an app context around `create_app()`. Superset 1.4.x's `create_app()` calls
-`init_app()`, which runs `setup_db()` then `with app.app_context():
-init_app_in_ctx() -> configure_fab() -> appbuilder.init_app(app, db.session)`.
-Flask-AppBuilder's SecurityManager.__init__ runs
-`self.session.get_bind(mapper=None, clause=None)`. On a cold-start (no
-schema in the metadata DB), the greenlet-scoped session registry has not
-been populated for the current greenlet, the fallback `SQLA.__init__()`
-fires with `db.get_app()` returning None, and the chain ends with:
+The `apache/superset:latest` image pulled by this Dockerfile ships with
+flask-appbuilder 5.0.2, which has two bugs that prevent Superset from
+booting on a fresh database (or on any deploy where the schema needs
+work):
 
-    sqlalchemy.exc.NoInspectionAvailable: No inspection system is available
-    for object of type <class 'NoneType'>
+1. `flask_appbuilder.models.sqla.base.SQLA.get_tables_for_bind(None)`
+   calls `inspect(None)` and raises
+   `sqlalchemy.exc.NoInspectionAvailable: No inspection system is available
+   for object of type <class 'NoneType'>`.
 
-Reproduces on every fresh deploy / volume swap on Railway.
+2. The default `SignallingSession.get_bind` (from flask_sqlalchemy 2.5.x)
+   has signature `(mapper=None, clause=None)` and rejects the `bind=`
+   kwarg that SQLAlchemy 1.4+ passes in some call paths, raising
+   `TypeError: SignallingSession.get_bind() got an unexpected keyword
+   argument 'bind'`.
+
+Without this script, the init loop dies with one of those errors on every
+cold-start. After the script runs once successfully, the schema is at
+head and the upstream `superset init`/`superset fab create-admin`
+commands succeed cleanly on subsequent restarts.
 
 Strategy
--------
-The migration step is the one that's been observed failing in production.
-Rather than fighting Superset's `create_app()` (which always runs the broken
-path), we:
+--------
+Patch `flask_appbuilder.models.sqla.base.SQLA` BEFORE invoking Superset's
+`create_app()`:
 
-1. Build a *minimal* Flask app and load `superset_config.py` into it.
-   This gives us a working `app.config["SQLALCHEMY_DATABASE_URI"]` without
-   instantiating Flask-AppBuilder's SecurityManager. We then run Alembic
-   migrations to head via `flask_migrate.upgrade()`. Idempotent — running
-   on an already-migrated database is a no-op.
-2. For `init` and `fab create-admin` we DO call Superset's `create_app()`,
-   so the bug can still fire on a fresh DB with no schema. These calls
-   are kept because:
-   - On a redeploy with the schema already populated, they succeed
-     cleanly.
-   - On a cold-start deploy, they may fail; the calling bash script
-     treats that as non-fatal and the web server retries lazily on the
-     first request.
-   - The migration step is the gating dependency — if it succeeds,
-     everything else eventually catches up.
+- Replace `SQLA.get_tables_for_bind` with a version that returns `[]` for
+  `bind=None` and otherwise delegates to `sqlalchemy.inspect(...).get_table_names()`.
+- Replace `db.create_session` (an instance method) with a bound version
+  that sets `class_=_PatchedSignallingSession` in the sessionmaker kwargs.
+  `_PatchedSignallingSession` extends `flask_sqlalchemy.SignallingSession`
+  and accepts the `bind=` kwarg in `get_bind`.
+
+Then call `create_app()` and run Alembic migrations via
+`flask_migrate.upgrade()` inside an explicit app context.
+
 CLI flags
 ---------
 --upgrade-only   Run Alembic migrations only.
@@ -56,6 +56,7 @@ from __future__ import annotations
 import os
 import sys
 import traceback
+from types import MethodType
 from typing import Any
 
 
@@ -63,83 +64,99 @@ def _log(msg: str) -> None:
     print(f"[db_upgrade_safe] {msg}", flush=True)
 
 
-def _build_minimal_app() -> Any:
-    """Build a minimal Flask app loaded with `superset_config.py`.
+def _install_patches() -> None:
+    """Install the flask-appbuilder patches needed to boot Superset cleanly.
 
-    This bypasses Superset's `create_app()` and gives us just enough Flask
-    machinery to run Alembic migrations against the configured metadata
-    database, without instantiating Flask-AppBuilder (which is where the
-    cold-start bug lives).
+    These patches MUST be installed before Superset's `create_app()` is
+    called. They are idempotent and only affect the FAB `SQLA` subclass
+    used by `superset.extensions.db`.
     """
-    from flask import Flask
-    from flask_migrate import Migrate
-    from flask_sqlalchemy import SQLAlchemy
+    import logging
 
-    config_path = os.environ.get(
-        "SUPERSET_CONFIG_PATH", "/app/superset_config.py"
-    )
-    _log(f"Loading config from {config_path}")
-    import importlib.util
+    import sqlalchemy as _sa
+    import sqlalchemy.orm as _orm
+    from flask_appbuilder.models.sqla.base import SQLA as _FABSQLA
+    from flask_sqlalchemy import SignallingSession as _FAS
 
-    spec = importlib.util.spec_from_file_location("superset_user_config", config_path)
-    if spec is None or spec.loader is None:
-        raise RuntimeError(f"Could not load config from {config_path}")
-    user_cfg = importlib.util.module_from_spec(spec)
-    spec.loader.exec_module(user_cfg)
+    import superset.initialization as superset_init
+    import superset.security as superset_security
+    from superset.extensions import db, appbuilder
 
-    app = Flask("superset_safe_upgrade")
-    # Apply the user config keys we need. We don't want every key — only
-    # the SQLAlchemy-related ones — to avoid pulling in app-builder state.
-    for key in (
-        "SQLALCHEMY_DATABASE_URI",
-        "SQLALCHEMY_BINDS",
-        "SQLALCHEMY_TRACK_MODIFICATIONS",
-        "SQLALCHEMY_ENGINE_OPTIONS",
-        "SQLALCHEMY_ECHO",
-        "SQLALCHEMY_NATIVE_UNICODE",
-        "SQLALCHEMY_POOL_SIZE",
-        "SQLALCHEMY_POOL_TIMEOUT",
-        "SQLALCHEMY_POOL_RECYCLE",
-        "SQLALCHEMY_MAX_OVERFLOW",
-    ):
-        if hasattr(user_cfg, key):
-            app.config[key] = getattr(user_cfg, key)
+    # Patch 1: SQLA.get_tables_for_bind(None) returns [] instead of
+    # raising NoInspectionAvailable.
+    @staticmethod  # type: ignore[no-untyped-def]
+    def patched_get_tables_for_bind(bind):
+        if bind is None:
+            return []
+        return _sa.inspect(bind).get_table_names()
 
-    db = SQLAlchemy(app)
-    # Alembic migrations live inside the installed apache-superset package.
-    import superset
+    _FABSQLA.get_tables_for_bind = patched_get_tables_for_bind
 
-    migrations_dir = os.path.join(
-        os.path.dirname(superset.__file__), "migrations"
-    )
-    _log(f"Alembic migrations directory: {migrations_dir}")
-    Migrate(app, db, directory=migrations_dir)
-    return app, db
+    # Patch 2: a SignallingSession subclass whose get_bind accepts
+    # the bind= kwarg that SQLAlchemy 1.4+ may pass.
+    class _PatchedSignallingSession(_FAS):
+        def get_bind(  # type: ignore[override]
+            self,
+            mapper=None,
+            clause=None,
+            bind=None,
+            **kwargs,
+        ):
+            return super().get_bind(mapper=mapper, clause=clause)
+
+    # Patch 3: replace db.create_session (instance method) with one
+    # that wires _PatchedSignallingSession into the sessionmaker.
+    def _patched_create_session(self, options):  # type: ignore[no-untyped-def]
+        options.setdefault("class_", _PatchedSignallingSession)
+        options.setdefault("query_cls", db.Query)
+        return _orm.sessionmaker(db=self, **options)
+
+    db.create_session = MethodType(_patched_create_session, db)
+
+    # Patch 4: rebuild db.session so the new session factory is used.
+    # The session was built at __init__ time using the old (broken)
+    # factory.
+    if hasattr(db, "_make_scoped_session"):
+        # flask-sqlalchemy 3.x
+        db.session = db._make_scoped_session({})
+    else:
+        # flask-sqlalchemy 2.x
+        db.session = db.create_scoped_session({})
+
+    _log("Patched flask_appbuilder.SQLA: get_tables_for_bind + session factory")
+
+    # Patch 5: wrap configure_fab to push an app context around
+    # appbuilder.init_app, so that `current_app` is set when
+    # SecurityManager.__init__ runs.
+    SupersetAppInitializer = superset_init.SupersetAppInitializer
+    SupersetSecurityManager = superset_security.SupersetSecurityManager
+    SupersetIndexView = superset_init.SupersetIndexView
+
+    def patched_configure_fab(self):  # type: ignore[no-untyped-def]
+        if self.config["SILENCE_FAB"]:
+            logging.getLogger("flask_appbuilder").setLevel(logging.ERROR)
+
+        custom_sm = self.config["CUSTOM_SECURITY_MANAGER"] or SupersetSecurityManager
+        if not issubclass(custom_sm, SupersetSecurityManager):
+            raise Exception(
+                """Your CUSTOM_SECURITY_MANAGER must now extend SupersetSecurityManager,
+                 not FAB's security manager.
+                 See [4565] in UPDATING.md"""
+            )
+
+        with self.superset_app.app_context():
+            appbuilder.indexview = SupersetIndexView
+            appbuilder.base_template = "superset/base.html"
+            appbuilder.security_manager_class = custom_sm
+            appbuilder.init_app(self.superset_app, db.session)
+
+    SupersetAppInitializer.configure_fab = patched_configure_fab
+    _log("Patched SupersetAppInitializer.configure_fab")
 
 
-def _run_alembic_upgrade() -> None:
-    """Build a minimal app, push a context, run Alembic to head."""
-    app, db = _build_minimal_app()
-    with app.app_context():
-        engine = db.engine
-        _log(
-            "SQLAlchemy engine: "
-            f"{engine.url.render_as_string(hide_password=True)}"
-        )
-        from flask_migrate import upgrade as alembic_upgrade
-
-        _log("Running Alembic upgrade() to head...")
-        alembic_upgrade()
-        _log("Alembic upgrade() complete.")
-
-
-def _run_superset_cli(subcommand: str, args: list[str]) -> None:
-    """Run a Superset CLI command via FlaskGroup, but inside our app context.
-
-    This avoids the upstream bug because we already have an app context
-    pushed when `appbuilder.init_app` runs.
-    """
-    from flask.cli import FlaskGroup
+def _build_app() -> Any:
+    """Build the real Superset Flask app with patches applied."""
+    _install_patches()
 
     flask_app = os.environ.get("FLASK_APP", "superset.app:create_app()")
     if ":" not in flask_app:
@@ -147,28 +164,51 @@ def _run_superset_cli(subcommand: str, args: list[str]) -> None:
             f"FLASK_APP must be in module:attr form (got {flask_app!r})"
         )
     module_name, attr_name = flask_app.split(":", 1)
+    attr_name = attr_name.rstrip("()")
     import importlib
 
+    _log(f"Importing {module_name}.{attr_name}")
     factory = getattr(importlib.import_module(module_name), attr_name)
+    _log("Creating Flask app via factory...")
     app = factory()
+    _log(f"Flask app created: {app.name!r}")
+    return app
+
+
+def _run_alembic_upgrade(app: Any) -> None:
+    """Run Alembic to head inside the real Superset app context."""
+    from flask_migrate import upgrade as alembic_upgrade
+
+    with app.app_context():
+        from superset.extensions import db
+
+        engine = db.engine
+        _log(
+            "SQLAlchemy engine: "
+            f"{engine.url.render_as_string(hide_password=True)}"
+        )
+
+        _log("Running Alembic upgrade() to head...")
+        alembic_upgrade()
+        _log("Alembic upgrade() complete.")
+
+
+def _run_superset_cli(app: Any, subcommand: str, args: list[str]) -> None:
+    """Run a Superset CLI command via FlaskGroup, inside our app context."""
+    from flask.cli import FlaskGroup
 
     with app.app_context():
         cli = FlaskGroup(app=app)
         cli.main([subcommand, *args])
 
 
-def _run_superset_init() -> None:
-    """Seed default roles, permissions, and menu."""
+def _run_superset_init(app: Any) -> None:
     _log("Seeding roles and permissions (superset init)...")
-    _run_superset_cli("init", [])
+    _run_superset_cli(app, "init", [])
     _log("`superset init` complete.")
 
 
-def _run_fab_create_admin() -> None:
-    """Create the default admin user via Flask-AppBuilder.
-
-    Idempotent: FAB create_admin raises on existing user; we swallow that.
-    """
+def _run_fab_create_admin(app: Any) -> None:
     username = os.environ.get("ADMIN_USERNAME")
     password = os.environ.get("ADMIN_PASSWORD")
     email = os.environ.get("ADMIN_EMAIL")
@@ -184,6 +224,7 @@ def _run_fab_create_admin() -> None:
     _log(f"Creating admin user {username!r}...")
     try:
         _run_superset_cli(
+            app,
             "fab",
             [
                 "create-admin",
@@ -232,12 +273,16 @@ def _parse_args(argv: list[str]) -> dict[str, bool]:
 def main() -> int:
     flags = _parse_args(sys.argv[1:])
     try:
+        # Build the app ONCE, reuse for all subsequent steps. Each
+        # step pushes its own app context.
+        app = _build_app()
+
         if flags["all"] or flags["upgrade_only"]:
-            _run_alembic_upgrade()
+            _run_alembic_upgrade(app)
 
         if flags["all"] or flags["init_only"]:
             try:
-                _run_superset_init()
+                _run_superset_init(app)
             except Exception as init_exc:
                 _log(
                     f"WARNING: superset init seeding failed (non-fatal): "
@@ -245,7 +290,7 @@ def main() -> int:
                 )
 
         if flags["all"] or flags["admin_only"]:
-            _run_fab_create_admin()
+            _run_fab_create_admin(app)
 
         _log("OK")
         return 0
